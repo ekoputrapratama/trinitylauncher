@@ -1,23 +1,9 @@
-![graphic](https://raw.githubusercontent.com/OpenLauncherTeam/openlauncher/master/metadata/en-US/featureGraphic.png)
-
 # TrinityLauncher
 
 This is an open source launcher project for Android devices based on OpenLauncher built with UX in mind. The main goal of this launcher is to find a healthy medium between customization and simplicity. At this point in time it implements most features required in a typical launcher but could benefit greatly from some general polish. If you would like to help out feel free to submit issues or ask about submitting a pull request with a feature you want to see in the launcher.
 
-<div style="display:flex;">
-<a href="https://f-droid.org/repository/browse/?fdid=com.benny.openlauncher">
-    <img height="80" alt="Get it on F-Droid" src="https://f-droid.org/badge/get-it-on.png">
-</a>
-<a href="https://play.google.com/store/apps/details?id=com.benny.openlauncher">
-    <img height="80" alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png" />
-</a>
-</div>
 
 ## Description
-
-<div style="display:flex;">
-    <img src="https://raw.githubusercontent.com/OpenLauncherTeam/openlauncher/master/metadata/en-US/screenshots.png">
-</div>
 
 ### Features
 
