@@ -99,3 +99,4 @@ app/src/main/res/raw/license
 app-flavorDefault-debug/
 
 metadata/
+build/
