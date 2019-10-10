@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <declare-styleable name="DashboardShortcut">
+    <attr name="icon_color" format="color" />
+    <attr name="grid_background" format="color" />
+  </declare-styleable>
+</resources>
