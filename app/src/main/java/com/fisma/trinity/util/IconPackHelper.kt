@@ -92,12 +92,12 @@ object IconPackHelper {
           apps[i].icon = BitmapDrawable(BitmapFactory.decodeResource(iconPackResources, intResourceIcon, uniformOptions))
         } else {
           try {
-            orig = Bitmap.createBitmap(apps[i].icon.getIntrinsicWidth(), apps[i].icon.getIntrinsicHeight(), Bitmap.Config.ARGB_8888)
+            orig = Bitmap.createBitmap(apps[i].icon.intrinsicWidth, apps[i].icon.intrinsicHeight, Bitmap.Config.ARGB_8888)
           } catch (e: Exception) {
             continue
           }
 
-          apps[i].icon.setBounds(0, 0, apps[i].icon.getIntrinsicWidth(), apps[i].icon.getIntrinsicHeight())
+          apps[i].icon.setBounds(0, 0, apps[i].icon.intrinsicWidth, apps[i].icon.intrinsicHeight)
           apps[i].icon.draw(Canvas(orig))
 
           scaledOrig = Bitmap.createBitmap(iconSize, iconSize, Bitmap.Config.ARGB_8888)
