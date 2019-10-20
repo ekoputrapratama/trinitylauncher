@@ -1,14 +1,6 @@
 package com.fisma.trinity
 
 class Constants {
-  enum class ItemType {
-    FOLDER,
-    LIVE_FOLDER,
-    APPWIDGET,
-    WIDGET_CLOCK,
-    WIDGET_SEARCH,
-    WIDGET_PHOTO_FRAME
-  }
 
   // DO NOT REARRANGE
   // enum ordinal used for db
@@ -29,7 +21,8 @@ class Constants {
   }
 
   enum class AppCategory {
-    PHONE, EMAIL, MESSAGING, CONTACTS
+    PHONE, EMAIL, MESSAGING, CONTACTS,
+    GALLERY, BROWSER, MARKET
   }
 
   companion object {
