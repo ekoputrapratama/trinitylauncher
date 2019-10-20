@@ -106,6 +106,7 @@ class DragLayer(context: Context, attrs: AttributeSet?) : FrameLayout(context, a
     _overlayPopup.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
     _overlayPopup.itemAnimator = _slideInLeftAnimator
     _overlayPopup.adapter = _overlayPopupAdapter
+
     mResizeFrame = AppWidgetResizeFrame(context, this)
     mResizeFrame.visibility = View.INVISIBLE
     mResizeFrame.alpha = 0f
