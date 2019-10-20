@@ -3,13 +3,26 @@ package com.fisma.trinity.widgets
 import android.appwidget.AppWidgetHostView
 import android.content.Context
 import android.view.MotionEvent
-import android.view.View
+import android.widget.RemoteViews
 
 
-class WidgetView(context: Context) : AppWidgetHostView(context) {
+class WidgetView(val mContext: Context) : AppWidgetHostView(mContext) {
   private var _onTouchListener: OnTouchListener? = null
   private var _longClick: OnLongClickListener? = null
   private var _down: Long = 0
+  private var mPreviousOrientation: Int = 0
+
+  override fun updateAppWidget(remoteViews: RemoteViews?) {
+    // Store the orientation in which the widget was inflated
+    mPreviousOrientation = mContext.resources.configuration.orientation
+    super.updateAppWidget(remoteViews)
+  }
+
+  fun isReinflateRequired(): Boolean {
+    // Re-inflate is required if the orientation has changed since last inflated.
+    val orientation = mContext.resources.configuration.orientation
+    return mPreviousOrientation != orientation
+  }
 
   override fun setOnTouchListener(onTouchListener: OnTouchListener) {
     _onTouchListener = onTouchListener
