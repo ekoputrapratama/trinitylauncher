@@ -3,10 +3,8 @@ package com.fisma.trinity.activity
 import android.bluetooth.BluetoothAdapter
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.util.Log
-import android.view.Gravity
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
 import androidx.core.graphics.drawable.DrawableCompat
@@ -16,14 +14,12 @@ import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat
 import com.fisma.trinity.Constants
 import com.fisma.trinity.R
 import com.fisma.trinity.TrinityPluginProvider
+import com.fisma.trinity.adapter.AvailableShortcutAdapter
 import com.fisma.trinity.adapter.ShortcutAdapter
 import com.fisma.trinity.model.ShortcutItem
 import com.fisma.trinity.util.ImageUtil
 import com.fisma.trinity.util.LauncherAction
 import com.fisma.trinity.util.Tool
-import com.fisma.trinity.viewutil.IconLabelItem
-import com.mikepenz.fastadapter.commons.adapters.FastItemAdapter
-import com.turingtechnologies.materialscrollbar.INameableAdapter
 import com.woxthebox.draglistview.DragListView
 
 class ShortcutSettings : ThemeActivity() {
@@ -35,6 +31,7 @@ class ShortcutSettings : ThemeActivity() {
     get() = findViewById(R.id.added_shortcuts)
   val mAvailableShortcutsGrid: RecyclerView
     get() = findViewById(R.id.builtin_shortcuts)
+  var mAvailableShortcutsAdapter: AvailableShortcutAdapter? = null
 
   companion object {
     const val TAG = "ShortcutSettings"
@@ -53,10 +50,12 @@ class ShortcutSettings : ThemeActivity() {
       updateIconForTheme(shortcut)
     }
 
-    val adapter = ShortcutAdapter(mAddedShortcuts, R.layout.shortcut_item, R.id.item_layout)
-
+    val adapter = ShortcutAdapter(mAddedShortcuts, this, R.layout.shortcut_item, R.id.item_layout)
+    adapter.withOnClickListener { view, item, position ->
+      addAvailableShortcut(item)
+      removeAddedShortcut(item, position)
+    }
     mAddedShortcutsGrid.setAdapter(adapter, false)
-
     mAddedShortcutsGrid.setDragListListener(object : DragListView.DragListListener {
       override fun onItemDragging(itemPosition: Int, x: Float, y: Float) {
 
@@ -65,14 +64,12 @@ class ShortcutSettings : ThemeActivity() {
       override fun onItemDragStarted(position: Int) {
         val item = mAddedShortcuts[position]
         Log.d(TAG, "start dragging item ${item.label}")
-        Toast.makeText(this@ShortcutSettings, "Start - position: " + position, Toast.LENGTH_SHORT).show()
       }
 
       override fun onItemDragEnded(fromPosition: Int, toPosition: Int) {
         if (fromPosition != toPosition) {
           val item = mAddedShortcuts[toPosition]
           Log.d(TAG, "finish dragging item ${item.label}")
-          Toast.makeText(this@ShortcutSettings, "End - position: " + toPosition, Toast.LENGTH_SHORT).show()
         }
       }
     })
@@ -84,9 +81,23 @@ class ShortcutSettings : ThemeActivity() {
     initAvailableShortcuts()
   }
 
+  fun removeAvailableShortcut(position: Int) {
+    mAvailableShortcuts.removeAt(position)
+  }
+
+  fun addAvailableShortcut(shortcut: ShortcutItem) {
+    mAvailableShortcuts.add(shortcut)
+    updateAvailableShortcuts()
+  }
+
+  fun removeAddedShortcut(shortcut: ShortcutItem, position: Int) {
+    mAddedShortcuts.removeAt(position)
+    mAddedShortcutsGrid.adapter.notifyDataSetChanged()
+    HomeActivity._db.deleteShortcut(shortcut)
+  }
+
   override fun onStop() {
     super.onStop()
-    Log.d(TAG, "onStop()")
     for (i in 0 until mAddedShortcuts.size) {
       val item = mAddedShortcuts[i]
       item.index = i
@@ -150,7 +161,7 @@ class ShortcutSettings : ThemeActivity() {
       shortcut = ShortcutItem.Builder()
         .setType(ShortcutItem.Type.APP)
         .setPackageName(info!!.activityInfo.packageName)
-        .setClassName(info!!.activityInfo.name)
+        .setClassName(info.activityInfo.name)
         .setAction(LauncherAction.Action.LauncherSettings)
         .setIcon(info.loadIcon(packageManager))
         .setLabel("Messages")
@@ -163,7 +174,7 @@ class ShortcutSettings : ThemeActivity() {
       shortcut = ShortcutItem.Builder()
         .setType(ShortcutItem.Type.APP)
         .setPackageName(info!!.activityInfo.packageName)
-        .setClassName(info!!.activityInfo.name)
+        .setClassName(info.activityInfo.name)
         .setAction(LauncherAction.Action.LauncherSettings)
         .setIcon(info.loadIcon(packageManager))
         .setLabel("Phone")
@@ -175,30 +186,21 @@ class ShortcutSettings : ThemeActivity() {
   }
 
   fun updateAvailableShortcuts() {
-    val items = ArrayList<IconLabelItem>()
-    for (shortcut in mAvailableShortcuts) {
-      val item = IconLabelItem(BitmapDrawable(resources, shortcut.icon), shortcut.label!!)
-        .withIconSize(this, 48)
-        .withIconPadding(this, 5)
-        .withTextGravity(Gravity.CENTER)
-        .withTextSize(10f)
-        .withIconGravity(Gravity.TOP)
-        .withIsAppLauncher(false)
-      items.add(item)
+    if (mAvailableShortcutsAdapter == null) {
+      mAvailableShortcutsAdapter = AvailableShortcutAdapter()
+      mAvailableShortcutsGrid.adapter = mAvailableShortcutsAdapter
+      mAvailableShortcutsAdapter!!.withOnClickListener { v, item, position ->
+        if (mAddedShortcuts.size > 5) {
+          Toast.makeText(this, "", Toast.LENGTH_LONG)
+        }
+        val removed = mAvailableShortcuts.removeAt(position)
+        mAddedShortcuts.add(removed)
+        mAvailableShortcutsAdapter!!.notifyDataSetChanged()
+        mAddedShortcutsGrid.adapter.notifyDataSetChanged()
+      }
     }
 
-
-    val adapter = AvailableShortcutAdapter()
-    mAvailableShortcutsGrid.adapter = adapter
-    adapter.withOnClickListener { v, adapter, item, position ->
-      val removed = mAvailableShortcuts.removeAt(position)
-      mAddedShortcuts.add(removed)
-      mAvailableShortcuts
-      updateAvailableShortcuts()
-      mAddedShortcutsGrid.adapter.notifyDataSetChanged()
-      false
-    }
-    adapter.set(items)
+    mAvailableShortcutsAdapter!!.submitList(mAvailableShortcuts)
   }
 
   fun updateIconForTheme(shortcut: ShortcutItem) {
@@ -231,12 +233,4 @@ class ShortcutSettings : ThemeActivity() {
     }
   }
 
-  inner class AvailableShortcutAdapter : FastItemAdapter<IconLabelItem>(), INameableAdapter {
-    override fun getCharacterForElement(element: Int): Char? {
-      return if (element < mAvailableShortcuts.size && mAvailableShortcuts!![element] != null && mAvailableShortcuts[element].label!!.length > 0)
-        mAvailableShortcuts[element].label!![0]
-      else
-        '#'
-    }
-  }
 }
