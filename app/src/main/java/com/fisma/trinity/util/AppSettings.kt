@@ -223,6 +223,17 @@ class AppSettings(context: Context) : SharedPreferencesPropertyBackend(context, 
       _prefApp.edit().putBoolean(_context.getString(R.string.pref_key__queue_restart), value).commit()
     }
 
+  var enableBlur: Boolean
+    get() = getBool("pref_key__enable_blur", true)
+    set(value) {
+      _prefApp.edit().putBoolean("pref_key__enable_blur", value).commit()
+    }
+
+  var blurRadius: Float
+    get() = getFloat("pref_key__blur_radius", 1f)
+    set(value) {
+      _prefApp.edit().putFloat("pref_key__blur_radius", value).commit()
+    }
   // MUST be committed
   var appFirstLaunch: Boolean
     get() = getBool(R.string.pref_key__first_start, true)
@@ -238,7 +249,7 @@ class AppSettings(context: Context) : SharedPreferencesPropertyBackend(context, 
     // no action was found so it must be an intent string
     if (gesture == null) {
       gesture = IntentUtil.getIntentFromString(result)
-      if (AppManager.getInstance(_context)!!.findApp(gesture as Intent?) == null) gesture = null
+      if (AppManager.getInstance(_context)!!.findApp(gesture) == null) gesture = null
     }
     // reset the setting if invalid value
     if (gesture == null) {
