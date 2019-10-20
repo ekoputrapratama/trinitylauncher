@@ -1,8 +1,6 @@
 package com.fisma.trinity.model
 
-import android.appwidget.AppWidgetProviderInfo
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import com.fisma.trinity.Constants
 import com.fisma.trinity.util.IntentUtil
@@ -14,7 +12,7 @@ open class Item {
   // all items need these values
   var icon: Drawable? = null
   var label: String
-  lateinit var type: Type
+  var type: Type? = null
   var _id: Int = 0
   var _location: Constants.ItemPosition? = null
   var x = 0
