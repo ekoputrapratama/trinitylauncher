@@ -1,5 +1,6 @@
 package com.fisma.trinity.fragment
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.AsyncTask
 import android.os.Bundle
@@ -31,7 +32,7 @@ class HideAppsFragment : Fragment() {
     _switcherLoad = rootView.findViewById(R.id.viewSwitcherLoadingMain)
 
     val fab = rootView.findViewById<FloatingActionButton>(R.id.fab_rq)
-    fab.setOnClickListener(View.OnClickListener { confirmSelection() })
+    fab.setOnClickListener { confirmSelection() }
 
     if (_taskList.status == AsyncTask.Status.PENDING) {
       // task has not started yet
@@ -46,7 +47,8 @@ class HideAppsFragment : Fragment() {
     return rootView
   }
 
-  inner class AsyncWorkerList constructor() : AsyncTask<String, Int, String>() {
+  @SuppressLint("StaticFieldLeak")
+  inner class AsyncWorkerList : AsyncTask<Any, Any, Any>() {
 
     override fun onPreExecute() {
       val hiddenList = AppSettings.get().hiddenAppsList
@@ -55,7 +57,7 @@ class HideAppsFragment : Fragment() {
       super.onPreExecute()
     }
 
-    override fun doInBackground(vararg arg0: String): String? {
+    override fun doInBackground(vararg arg0: Any): Any? {
       try {
         // compare to installed apps
         prepareData()
@@ -67,7 +69,7 @@ class HideAppsFragment : Fragment() {
       return null
     }
 
-    override fun onPostExecute(result: String) {
+    override fun onPostExecute(result: Any?) {
       populateView()
       // switch from loading screen to the main view
       _switcherLoad!!.showNext()
@@ -137,31 +139,31 @@ class HideAppsFragment : Fragment() {
   private inner class HideAppsAdapter constructor(context: Context, adapterArrayList: ArrayList<App>) : ArrayAdapter<App>(context, R.layout.item_hide_apps, adapterArrayList) {
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-      var convertView = convertView
+      var view = convertView
       val holder: ViewHolder
       if (convertView == null) {
-        convertView = (activity!!.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater).inflate(R.layout.item_hide_apps, parent, false)
+        view = (activity!!.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater).inflate(R.layout.item_hide_apps, parent, false)
         holder = ViewHolder()
-        holder._apkIcon = convertView!!.findViewById(R.id.IVappIcon)
-        holder._apkName = convertView.findViewById(R.id.TVappName)
-        holder._apkPackage = convertView.findViewById(R.id.TVappPackage)
-        holder._checker = convertView.findViewById(R.id.CBappSelect)
-        holder._switcherChecked = convertView.findViewById(R.id.viewSwitcherChecked)
-        convertView.tag = holder
+        holder._apkIcon = view!!.findViewById(R.id.IVappIcon)
+        holder._apkName = view.findViewById(R.id.TVappName)
+        holder._apkPackage = view.findViewById(R.id.TVappPackage)
+        holder._checker = view.findViewById(R.id.CBappSelect)
+        holder._switcherChecked = view.findViewById(R.id.viewSwitcherChecked)
+        view.tag = holder
       } else {
-        holder = convertView.tag as ViewHolder
+        holder = view!!.tag as ViewHolder
       }
 
       val appInfo = getItem(position)
 
-      holder._apkPackage!!.setText(appInfo!!.className)
-      holder._apkName!!.setText(appInfo.label)
+      holder._apkPackage!!.text = appInfo!!.className
+      holder._apkName!!.text = appInfo.label
       holder._apkIcon!!.setImageDrawable(appInfo.icon)
 
       holder._switcherChecked!!.inAnimation = null
       holder._switcherChecked!!.outAnimation = null
-      holder._checker!!.isChecked = _listActivitiesHidden.contains(appInfo!!.componentName)
-      if (_listActivitiesHidden.contains(appInfo!!.componentName)) {
+      holder._checker!!.isChecked = _listActivitiesHidden.contains(appInfo.componentName)
+      if (_listActivitiesHidden.contains(appInfo.componentName)) {
         if (holder._switcherChecked!!.displayedChild == 0) {
           holder._switcherChecked!!.showNext()
         }
@@ -170,7 +172,7 @@ class HideAppsFragment : Fragment() {
           holder._switcherChecked!!.showPrevious()
         }
       }
-      return convertView
+      return view
     }
   }
 
