@@ -1,7 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <declare-styleable name="DashboardShortcut">
-    <attr name="icon_color" format="color" />
+  <declare-styleable name="DashboardView">
+    <attr name="sliceItemBackground" format="color" />
+    <attr name="iconColor" format="color" />
+    <attr name="activeIconColor" format="color" />
     <attr name="grid_background" format="color" />
+  </declare-styleable>
+
+  <declare-styleable name="AppDrawer">
+    <attr name="cardBackgroundColor" format="color" />
+  </declare-styleable>
+
+  <declare-styleable name="PopupIconLabelItem">
+    <attr name="popupItemBackground" format="color" />
   </declare-styleable>
 </resources>
