@@ -1,30 +1,29 @@
 package com.fisma.trinity.activity
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityOptions
+import android.app.WallpaperManager
 import android.appwidget.AppWidgetManager
 import android.content.*
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.Point
-import android.graphics.PointF
+import android.graphics.*
+import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Build.VERSION
 import android.os.Bundle
 import android.os.Handler
-import android.provider.ContactsContract
-import android.provider.Telephony
-import android.telecom.TelecomManager
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
+import android.widget.FrameLayout
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat
+import androidx.core.app.ActivityCompat
 import androidx.viewpager.widget.ViewPager
-import com.afollestad.materialdialogs.MaterialDialog
 import com.fisma.trinity.BuildConfig
 import com.fisma.trinity.Constants
 import com.fisma.trinity.R
@@ -38,17 +37,18 @@ import com.fisma.trinity.manager.Settings
 import com.fisma.trinity.model.App
 import com.fisma.trinity.model.AppWidget
 import com.fisma.trinity.model.Item
-import com.fisma.trinity.model.ShortcutItem
 import com.fisma.trinity.receivers.AppUpdateReceiver
 import com.fisma.trinity.receivers.ShortcutReceiver
 import com.fisma.trinity.util.*
 import com.fisma.trinity.viewutil.DialogHelper
-import com.fisma.trinity.viewutil.AppWidgetHost
+import com.fisma.trinity.viewutil.WidgetHost
 import com.fisma.trinity.viewutil.WorkspaceGestureListener
 import com.fisma.trinity.widgets.*
+import com.hoko.blur.HokoBlur
+import com.hoko.blur.task.AsyncBlurTask
 import net.gsantner.opoc.util.Callback
 
-class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptionView.DesktopOptionViewListener {
+class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, WorkspaceOptionView.DesktopOptionViewListener {
   companion object {
     const val TAG = "HomeActivity"
     const val REQUEST_CREATE_APPWIDGET = 0x6475
@@ -58,7 +58,7 @@ class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptio
     const val REQUEST_BIND_APPWIDGET = 11
     const val REQUEST_RECONFIGURE_APPWIDGET = 12
 
-    lateinit var _appWidgetHost: AppWidgetHost
+    lateinit var _WidgetHost: WidgetHost
     lateinit var mAppWidgetManager: AppWidgetManagerCompat
     var ignoreResume: Boolean = false
     var _itemTouchX: Float = 0.toFloat()
@@ -79,6 +79,7 @@ class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptio
     private val _shortcutIntentFilter = IntentFilter()
     private val _timeChangedIntentFilter = IntentFilter()
 
+    @SuppressLint("StaticFieldLeak")
     var mWorkspaceGrid: DynamicGrid? = null
 
     init {
@@ -121,7 +122,7 @@ class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptio
   val groupPopup: GroupPopupView
     get() = contentView.findViewById(R.id.groupPopup)
 
-  val background: View
+  val background: FrameLayout
     get() = findViewById(R.id.background_frame)
 
   private val desktopIndicator: PagerIndicator
@@ -169,6 +170,12 @@ class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptio
     }
 
     _db = Settings.dataManager()
+    val appSettings = AppSettings.get()
+    if (appSettings.theme == "0") {
+      setTheme(R.style.Home_Light)
+    } else if (appSettings.theme == "1") {
+      setTheme(R.style.Home_Dark)
+    }
 
     setContentView(layoutInflater.inflate(R.layout.activity_home, null))
 
@@ -181,10 +188,57 @@ class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptio
     init()
   }
 
+  override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    if (requestCode == 0) {
+      if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+        updateBackground()
+      }
+    }
+  }
+
+  private fun askRequiredPermissions() {
+    Log.d(TAG, "askRequredPermissions")
+    if (!hasStoragePermission) {
+      // Permission is not granted
+      // Should we show an explanation?
+      ActivityCompat.requestPermissions(this,
+        arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA),
+        0)
+    }
+  }
+
+  private fun updateBackground() {
+    if (hasStoragePermission) {
+      val wallpaperManager = WallpaperManager.getInstance(this)
+      val drawable = wallpaperManager.drawable.mutate()
+
+      val task = HokoBlur.with(this)
+        .scheme(HokoBlur.SCHEME_NATIVE)
+        .mode(HokoBlur.MODE_STACK)
+        .radius(25)
+        .sampleFactor(2f)
+        .forceCopy(true)
+        .needUpscale(false)
+        .asyncBlur(ImageUtil.drawableToBitmap(drawable), object : AsyncBlurTask.Callback {
+          override fun onBlurSuccess(bitmap: Bitmap?) {
+            background.background = BitmapDrawable(bitmap)
+          }
+
+          override fun onBlurFailed(error: Throwable?) {
+
+          }
+        })
+
+    } else {
+      background.setBackgroundColor(Color.parseColor("#CD000000"))
+    }
+  }
+
   private fun init() {
-    mAppWidgetManager = AppWidgetManagerCompat.getInstance(this)
-    _appWidgetHost = AppWidgetHost(applicationContext, R.id.app_widget_host)
-    _appWidgetHost.startListening()
+    mAppWidgetManager = AppWidgetManagerCompat.getInstance(applicationContext)
+    _WidgetHost = WidgetHost(applicationContext, R.id.app_widget_host)
+    _WidgetHost.startListening()
 
 
     if (Settings.appSettings().appFirstLaunch) {
@@ -192,6 +246,7 @@ class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptio
       Settings.appSettings().setAppShowIntro(false)
 
       initDockItems()
+      askRequiredPermissions()
     }
 
     // item drag and drop
@@ -208,8 +263,6 @@ class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptio
     val appDrawerBtnItem = Item.newActionItem(8)
     appDrawerBtnItem.x = 2
     _db.saveItem(appDrawerBtnItem, 0, Constants.ItemPosition.Dock)
-
-    // TODO: add default application to the dock including messages, phone, browser, email
 
     var info = Tool.getDefaultAppInfo(packageManager, Constants.AppCategory.MESSAGING)
     var item = Item.newAppItem(App(packageManager, info!!))
@@ -309,6 +362,8 @@ class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptio
     })
     HomeAppDrawer(this, desktopIndicator).initAppDrawer(appDrawerController)
     HomeWidgetPicker(this).initWidgetPicker(widgetPicker)
+
+    updateBackground()
   }
 
   private fun initSettings() {
@@ -549,7 +604,7 @@ class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptio
           val pos = Point()
           workspace.currentPage.touchPosToCoordinate(pos, x, y, item.spanX, item.spanY, false)
           val itemView = workspace.currentPage.coordinateToChildView(pos)
-          if (itemView != null && Workspace.handleOnDropOver(_homeActivity, item, itemView.tag as Item, itemView, workspace.currentPage, workspace.currentItem, Constants.ItemPosition.Desktop, workspace)) {
+          if (itemView != null && Workspace.handleOnDropOver(item, itemView.tag as Item, itemView, workspace.currentPage, workspace.currentItem, Constants.ItemPosition.Desktop, workspace)) {
             workspace.consumeLastItem()
             dock.consumeLastItem()
           } else {
@@ -633,7 +688,7 @@ class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptio
           dock.touchPosToCoordinate(pos, x, y, item.spanX, item.spanY, false)
           val itemView = dock.coordinateToChildView(pos)
           if (itemView != null) {
-            if (Workspace.handleOnDropOver(_homeActivity, item, itemView.tag as Item, itemView, dock, 0, Constants.ItemPosition.Dock, dock)) {
+            if (Workspace.handleOnDropOver(item, itemView.tag as Item, itemView, dock, 0, Constants.ItemPosition.Dock, dock)) {
               workspace.consumeLastItem()
               dock.consumeLastItem()
             } else {
@@ -776,17 +831,16 @@ class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptio
   }
 
   override fun onDesktopEdit() {
+    AppWidgetResizeFrame.hideResizeFrame()
     Animation.fadeIn(100, desktopOptionView)
     updateDesktopIndicator(false)
     updateDock(false)
-    //        updateSearchBar(false);
   }
 
   override fun onFinishDesktopEdit() {
     Animation.fadeOut(100, desktopOptionView)
     updateDesktopIndicator(true)
     updateDock(true)
-    //        updateSearchBar(true);
   }
 
   override fun onSetPageAsHome() {
@@ -901,11 +955,10 @@ class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptio
   }
 
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-    if (requestCode == REQUEST_BIND_APPWIDGET) {
+    super.onActivityResult(requestCode, resultCode, data)
+    if (requestCode == REQUEST_BIND_APPWIDGET || requestCode == REQUEST_CREATE_APPWIDGET) {
       if (resultCode == Activity.RESULT_OK) {
         mAppWidgetPicker.onWidgetBinded(launcher, data!!)
-      } else {
-        // 
       }
     }
   }
@@ -915,7 +968,7 @@ class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptio
   }
 
   override fun onStart() {
-    _appWidgetHost.startListening()
+    _WidgetHost.startListening()
     _launcher = this
 
     super.onStart()
@@ -923,7 +976,7 @@ class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptio
 
   override fun onResume() {
     super.onResume()
-    _appWidgetHost.startListening()
+    _WidgetHost.startListening()
     _launcher = this
 
     // handle restart if something needs to be reset
@@ -946,7 +999,7 @@ class HomeActivity : Activity(), Workspace.OnDesktopEditListener, WorkspaceOptio
   }
 
   override fun onDestroy() {
-    _appWidgetHost.stopListening()
+    _WidgetHost.stopListening()
     _launcher = null
 
     unregisterReceiver(_appUpdateReceiver)
