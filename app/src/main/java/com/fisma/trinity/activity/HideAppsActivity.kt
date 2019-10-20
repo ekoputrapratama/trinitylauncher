@@ -21,10 +21,6 @@ class HideAppsActivity : ThemeActivity() {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_hide_apps)
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-      window.statusBarColor = resources.getColor(R.color.colorPrimaryDark)
-    }
 
     val viewPager = findViewById<ViewPager>(R.id.viewpager)
     setupViewPager(viewPager)
