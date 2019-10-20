@@ -7,6 +7,7 @@ import android.os.Build
 import android.util.Log
 import android.hardware.camera2.CameraAccessException
 import android.os.Handler
+import com.fisma.trinity.util.runOnMainThread
 
 
 @TargetApi(Build.VERSION_CODES.M)
@@ -15,13 +16,15 @@ class TorchCompatVM(val context: Context) : TorchCompat() {
   var flashlightEnabled = false
 
   init {
-    val handler = Handler()
-    camManager.registerTorchCallback(object : CameraManager.TorchCallback() {
-      override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
-        super.onTorchModeChanged(cameraId, enabled)
-        flashlightEnabled = enabled
-      }
-    }, handler)
+    runOnMainThread {
+      val handler = Handler()
+      camManager.registerTorchCallback(object : CameraManager.TorchCallback() {
+        override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
+          super.onTorchModeChanged(cameraId, enabled)
+          flashlightEnabled = enabled
+        }
+      }, handler)
+    }
   }
 
   override fun isEnabled(): Boolean {
@@ -30,10 +33,10 @@ class TorchCompatVM(val context: Context) : TorchCompat() {
 
   override fun turnOnFlashLight() {
     try {
-      var cameraId: String? = null; // Usually front camera is at 0 position.
+      var cameraId: String? = null // Usually front camera is at 0 position.
       if (camManager != null) {
-        cameraId = camManager!!.cameraIdList[0]
-        camManager!!.setTorchMode(cameraId, true)
+        cameraId = camManager.cameraIdList[0]
+        camManager.setTorchMode(cameraId, true)
       }
     } catch (e: CameraAccessException) {
       Log.e("", e.toString())
@@ -44,8 +47,8 @@ class TorchCompatVM(val context: Context) : TorchCompat() {
     try {
       val cameraId: String
       if (camManager != null) {
-        cameraId = camManager!!.getCameraIdList()[0] // Usually front camera is at 0 position.
-        camManager!!.setTorchMode(cameraId, false)
+        cameraId = camManager.cameraIdList[0] // Usually front camera is at 0 position.
+        camManager.setTorchMode(cameraId, false)
       }
     } catch (e: CameraAccessException) {
       e.printStackTrace()
