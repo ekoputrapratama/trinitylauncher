@@ -23,12 +23,6 @@ abstract class ThemeActivity : AppCompatActivity() {
       setTheme(R.style.NormalActivity_Light)
     } else if (_appSettings!!.theme == "1") {
       setTheme(R.style.NormalActivity_Dark)
-    } else {
-      setTheme(R.style.NormalActivity_Black)
-    }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      window.statusBarColor = dark(_appSettings!!.primaryColor, 0.8)
-      window.navigationBarColor = _appSettings!!.primaryColor
     }
     super.onCreate(savedInstanceState)
   }
