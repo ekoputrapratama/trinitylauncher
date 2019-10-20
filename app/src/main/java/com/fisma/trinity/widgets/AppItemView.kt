@@ -28,7 +28,7 @@ class AppItemView @JvmOverloads constructor(context: Context, attrs: AttributeSe
   var iconSize: Float = 0.toFloat()
   var showLabel = true
   private var _vibrateWhenLongPress: Boolean = false
-  private val _labelHeight: Float
+  private val _labelHeight: Float = Tool.dp2px(14f).toFloat()
   private var _targetedWidth: Int = 0
   private var _targetedHeightPadding: Int = 0
   var drawIconTop: Float = 0.toFloat()
@@ -39,7 +39,6 @@ class AppItemView @JvmOverloads constructor(context: Context, attrs: AttributeSe
 
   init {
 
-    _labelHeight = Tool.dp2px(14f).toFloat()
     _textPaint.textSize = Tool.sp2px(12f).toFloat()
     _textPaint.color = Color.WHITE
   }
@@ -59,10 +58,6 @@ class AppItemView @JvmOverloads constructor(context: Context, attrs: AttributeSe
       mWidth = _targetedWidth.toFloat()
     }
     setMeasuredDimension(Math.ceil(mWidth.toDouble()).toInt(), Math.ceil(mHeight.toInt().toDouble()).toInt() + Tool.dp2px(2f) + _targetedHeightPadding * 2)
-  }
-
-  override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-    super.onLayout(changed, left, top, right, bottom)
   }
 
   override fun onDraw(canvas: Canvas) {
@@ -145,15 +140,11 @@ class AppItemView @JvmOverloads constructor(context: Context, attrs: AttributeSe
     fun setActionItem(item: Item): Builder {
       view.label = item.label
       view.icon = ContextCompat.getDrawable(Settings.appContext(), R.drawable.ic_app_menu)
-      view.setOnClickListener(object : View.OnClickListener {
-        override fun onClick(view: View) {
-          Animation.createScaleInScaleOutAnim(view, object : Runnable {
-            override fun run() {
-              HomeActivity.launcher.openAppDrawer(view, 0, 0)
-            }
-          })
-        }
-      })
+      view.setOnClickListener { view ->
+        Animation.createScaleInScaleOutAnim(view, Runnable {
+          HomeActivity.launcher.openAppDrawer(view, 0, 0)
+        })
+      }
       return this
     }
 
