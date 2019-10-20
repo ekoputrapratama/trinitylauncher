@@ -7,13 +7,8 @@ import android.appwidget.AppWidgetProviderInfo
 import android.content.ComponentName
 import android.content.Context
 import android.graphics.Rect
-import android.util.DisplayMetrics
-import android.util.Log
 import com.fisma.trinity.manager.Settings
-import org.jetbrains.annotations.TestOnly
 import java.util.ArrayList
-import android.R.attr.y
-import android.R.attr.x
 import android.graphics.Point
 
 
@@ -27,7 +22,6 @@ class DynamicGrid {
     var navBarHeight: Int = 0
       set(value) {
         if (value != field) {
-          Log.d(TAG, "navBarHeight changed")
           field = value
           for (instance in mInstances) {
             instance.update()
@@ -38,7 +32,6 @@ class DynamicGrid {
     var statusBarHeight: Int = 0
       set(value) {
         if (value != field) {
-          Log.d(TAG, "statusBarHeight changed")
           field = value
           for (instance in mInstances) {
             instance.update()
@@ -46,6 +39,7 @@ class DynamicGrid {
         }
       }
   }
+
   private var mGridChangeListeners: ArrayList<DynamicGridChangeListener> = ArrayList()
   private var mContext: Activity? = null
   var cellWidth: Int = 0
@@ -60,9 +54,8 @@ class DynamicGrid {
   private var childs: Array<Array<Rect?>?> = arrayOfNulls(0)
   private var _orientation: GridOrientation = GridOrientation.PORTRAIT
   private var _params: DynamicGridParams
-  @Suppress("UNNECESSARY_LATEINIT")
-  private lateinit var _cellProfile: CellProfile
-  private lateinit var mGridName: String
+  private var _cellProfile: CellProfile
+  private var mGridName: String
 
   enum class GridOrientation {
     PORTRAIT,
@@ -131,7 +124,7 @@ class DynamicGrid {
         }
       }
 
-    constructor() {}
+    constructor()
 
     constructor(params: DynamicGridParams) {
       this.rowProfile = params.rowProfile!!.clone()
@@ -160,7 +153,7 @@ class DynamicGrid {
 
   class CellProfile(val margin: Margin? = Margin(0, 0, 0, 0)) {
     fun clone(): CellProfile {
-      return CellProfile(margin)
+      return CellProfile(margin?.clone())
     }
   }
 
@@ -179,7 +172,6 @@ class DynamicGrid {
     mInstances.add(this)
     mGridName = name
     if ((mScreenHeight == 0 || mScreenWidth == 0) && mContext != null) {
-      System.out.println("getting screen size")
       val display = mContext!!.windowManager.defaultDisplay
       val size = Point()
       display.getRealSize(size)
@@ -247,13 +239,13 @@ class DynamicGrid {
     return this
   }
 
-  fun update(){
+  fun update() {
     calculateGridSize()
     calculateGridItems()
     dispatchChanges()
   }
 
-  fun calculateGridSize() {
+  private fun calculateGridSize() {
     var margin = if (!_params.shouldIgnoreMargin)
       _params.margin.left + _params.margin.right
     else 0
@@ -272,7 +264,6 @@ class DynamicGrid {
     margin = if (!_params.shouldIgnoreMargin)
       _params.margin.top + _params.margin.bottom
     else 0
-    Log.d("$TAG: $mGridName", "marginY=${margin}")
     if (_params.shouldFillHeight) {
       _params.height = mScreenHeight - margin - navBarHeight - statusBarHeight
     } else {
@@ -283,10 +274,9 @@ class DynamicGrid {
         _params.height = availableHeight
       }
     }
-    Log.d("$TAG: $mGridName", "height=${_params.height} statusBarHeight=$statusBarHeight navBarHeight=$navBarHeight screenHeight=$mScreenHeight")
   }
 
-  fun calculateGridItems() {
+  private fun calculateGridItems() {
 
     if (isOrientationChanged) {
       val tmp = width
@@ -352,22 +342,17 @@ class DynamicGrid {
     if (minWidth <= itemWidth) {
       return itemWidth
     }
-    var spanX = 0
+
     for (i in 1 until columnCount + 1) {
-      Log.d("getMinWidthForWidget", "============ COLUMN $i ================")
       val currentWidth = itemWidth * i
       if (minWidth <= currentWidth) {
-        Log.d("getMinWidthForWidget", "column $i ($minWidth <= $currentWidth)")
         minWidth = currentWidth
-        spanX++
         break
       }
-      spanX++
     }
     if (minWidth > _params.width) {
       minWidth = _params.width
     }
-    Log.d("getMinWidthForWidget", "${info.label} widgetMinWidth=${Tool.dp2px(info.minWidth.toFloat())} minWidth=$minWidth itemWidth=$itemWidth spanX=$spanX columnCount=$columnCount")
     return minWidth
   }
 
@@ -378,28 +363,22 @@ class DynamicGrid {
 
     // get grid item height by dividing workspace height by row count
     val itemHeight = cellHeight
-    val halfHeight = itemHeight / 2
 
     // get the real minHeight, which is different based on user configuration for the desktop
     if (minHeight <= itemHeight) {
       return itemHeight
     }
-    var spanY = 0
+
     for (i in 1 until rowCount + 1) {
-      Log.d("getMinHeightForWidget", "============ COLUMN $i ================")
       val currentHeight = itemHeight * i
       if (minHeight <= currentHeight) {
-        Log.d("getMinHeightForWidget", "column $i ($minHeight <= $currentHeight)")
         minHeight = currentHeight
-        spanY++
         break
       }
-      spanY++
     }
     if (minHeight > _params.height) {
       minHeight = _params.height
     }
-    Log.d("getMinHeightForWidget", "${info.label} widgetMinHeight=${info.minWidth} minHeight=$minHeight itemHeight=$itemHeight spanY=$spanY rowCount=$rowCount")
     return minHeight
   }
 
@@ -456,7 +435,6 @@ class DynamicGrid {
       }
       spanXY[1] = spanY
     }
-    Log.d("getSpanForWidget", "spanX=${spanXY[0]} spanY=${spanXY[1]}")
     return spanXY
   }
 
@@ -474,8 +452,8 @@ class DynamicGrid {
     )
   }
 
-  fun dispatchChanges() {
-    for(listener in mGridChangeListeners) {
+  private fun dispatchChanges() {
+    for (listener in mGridChangeListeners) {
       listener.onGridChange(_params.width, _params.height, cellWidth, cellHeight)
     }
   }
