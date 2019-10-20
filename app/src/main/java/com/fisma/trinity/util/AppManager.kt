@@ -1,5 +1,6 @@
 package com.fisma.trinity.util
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.LauncherApps
@@ -153,7 +154,7 @@ class AppManager(context: Context) {
       }
 
       // sort the apps by label here
-      Collections.sort(_nonFilteredApps) { one, two -> Collator.getInstance().compare(one.label, two.label) }
+      _nonFilteredApps.sortBy { it.label }
 
       val hiddenList = AppSettings.get().hiddenAppsList
       if (hiddenList != null) {
@@ -185,7 +186,7 @@ class AppManager(context: Context) {
       notifyUpdateListeners(_apps)
 
       val removed = getRemovedApps(tempApps!!, _apps)
-      if (removed.size > 0) {
+      if (removed.isNotEmpty()) {
         notifyRemoveListeners(removed)
       }
 
@@ -200,6 +201,7 @@ class AppManager(context: Context) {
   }
 
   companion object {
+    @SuppressLint("StaticFieldLeak")
     private var appManager: AppManager? = null
 
     fun getInstance(context: Context): AppManager? {
