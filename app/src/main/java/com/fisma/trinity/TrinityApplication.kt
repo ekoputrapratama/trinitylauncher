@@ -9,6 +9,7 @@ import com.facebook.flipper.plugins.inspector.DescriptorMapping
 import com.facebook.flipper.plugins.inspector.InspectorFlipperPlugin
 import com.facebook.soloader.SoLoader
 import com.facebook.flipper.plugins.sharedpreferences.SharedPreferencesFlipperPlugin
+import com.fisma.trinity.manager.PluginManager
 import com.fisma.trinity.util.AppSettings
 import net.gsantner.opoc.util.ContextUtils
 
@@ -17,6 +18,7 @@ class TrinityApplication : Application() {
   override fun onCreate() {
     super.onCreate()
     _instance = this
+    PluginManager.initialize(this)
     AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
     SoLoader.init(this, false)
     if (BuildConfig.DEBUG && FlipperUtils.shouldEnableFlipper(this)) {

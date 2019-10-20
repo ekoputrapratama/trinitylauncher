@@ -1,68 +1,48 @@
 package com.fisma.trinity.widgets
 
 import android.content.Context
-import android.graphics.Color
 import android.util.AttributeSet
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.BaseAdapter
-import android.widget.ListView
-import androidx.cardview.widget.CardView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.fisma.trinity.R
+import com.fisma.trinity.adapter.DashboardAdapter
+import com.fisma.trinity.manager.PluginManager
+import com.fisma.trinity.model.Plugin
 
-class DashboardView : ListView {
+class DashboardView : RecyclerView {
   var mAdapter: DashboardAdapter? = null
+  var mPluginList: ArrayList<Plugin> = ArrayList()
 
-  constructor(context: Context) : this(context, null) {
-
-  }
+  constructor(context: Context) : this(context, null)
 
   constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
+    layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
 
-    var list = ArrayList<CardView>()
+    mAdapter = DashboardAdapter()
+    adapter = mAdapter
 
-    var inflater = LayoutInflater.from(context)
-    var item = inflater.inflate(R.layout.view_dashboard_shortcut, null, false) as DashboardShortcut
-
-    list.add(item)
-
-    adapter = DashboardAdapter(list)
-    setPadding(20, 50, 20, 50)
+    setPadding(0, 50, 0, 0)
+    mAdapter!!.submitList(mPluginList)
+    PluginManager.initViews(this)
   }
 
+  fun addPlugin(plugin: Plugin) {
+    mPluginList.add(plugin)
+    mAdapter!!.submitList(mPluginList)
+  }
 
-  class DashboardAdapter : BaseAdapter {
-    var list: ArrayList<CardView> = ArrayList()
+  fun removePlugin(plugin: Plugin) {
+    mPluginList.remove(plugin)
+    mAdapter!!.submitList(mPluginList)
+  }
 
-    constructor() {}
+  fun removePlugin(label: String) {
 
-    constructor(l: ArrayList<CardView>) {
-      list = l
-    }
+    mAdapter!!.submitList(mPluginList)
+  }
 
-    override fun getCount(): Int {
-      return list.size
-    }
-
-    override fun getItem(position: Int): Any {
-      return list[position]
-    }
-
-    override fun getItemId(position: Int): Long {
-      return position.toLong()
-    }
-
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-      var view = convertView
-
-      if (view == null) {
-        view = list[position]
-      } else {
-        view = convertView as View
-      }
-
-      return view
-    }
+  fun removePlugin(index: Int) {
+    mPluginList.removeAt(index)
+    mAdapter!!.submitList(mPluginList)
   }
 }
