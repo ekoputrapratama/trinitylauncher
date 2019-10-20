@@ -1,5 +1,6 @@
 package com.fisma.trinity.util
 
+import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
@@ -12,6 +13,7 @@ import com.fisma.trinity.model.Item
 import android.graphics.Bitmap.CompressFormat
 import android.graphics.BitmapFactory
 import com.fisma.trinity.model.AppWidget
+import com.fisma.trinity.model.Plugin
 import com.fisma.trinity.model.ShortcutItem
 import java.io.ByteArrayOutputStream
 
@@ -66,19 +68,19 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
       return dock
     }
 
-  val appWidgets: ArrayList<AppWidget>
+  val plugins: ArrayList<Plugin>
     get() {
-      val SQL_QUERY_APPWIDGET = SQL_QUERY + TABLE_APPWIDGET
-      val cursor = _db.rawQuery(SQL_QUERY_APPWIDGET, null)
-      val widgets = ArrayList<AppWidget>()
+      val SQL_QUERY_PLUGIN = SQL_QUERY + TABLE_PLUGIN
+      val cursor = _db.rawQuery(SQL_QUERY_PLUGIN, null)
+      val plugins = ArrayList<Plugin>()
       if (cursor.moveToFirst()) {
         do {
-          widgets.add(getWidgetSelection(cursor))
+          plugins.add(getPluginSelection(cursor))
         } while (cursor.moveToNext())
       }
       cursor.close()
-      widgets.sortBy { it.label }
-      return widgets
+      plugins.sortBy { it._label }
+      return plugins
     }
 
   val shortcuts: ArrayList<ShortcutItem>
@@ -98,14 +100,14 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
 
   override fun onCreate(db: SQLiteDatabase) {
     db.execSQL(SQL_CREATE_HOME)
-    db.execSQL(SQL_CREATE_APPWIDGET)
+    db.execSQL(SQL_CREATE_PLUGIN)
     db.execSQL(SQL_CREATE_SHORTCUTS)
   }
 
   override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
     // discard the data and start over
     db.execSQL(SQL_DELETE + TABLE_HOME)
-    db.execSQL(SQL_DELETE + TABLE_APPWIDGET)
+    db.execSQL(SQL_DELETE + TABLE_PLUGIN)
     db.execSQL(SQL_DELETE + TABLE_SHORTCUTS)
     onCreate(db)
   }
@@ -292,65 +294,6 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
     return item
   }
 
-  fun addWidgetItem(item: AppWidget) {
-    if (item.type != Item.Type.APPWIDGET) return
-
-    val itemValues = ContentValues()
-    itemValues.put(COLUMN_TIME, item.id)
-    itemValues.put(COLUMN_LABEL, item.label)
-    itemValues.put(COLUMN_SPAN_X, item.spanX)
-    itemValues.put(COLUMN_SPAN_Y, item.spanY)
-    itemValues.put(COLUMN_MIN_SPAN_X, item.minSpanX)
-    itemValues.put(COLUMN_MIN_SPAN_Y, item.minSpanY)
-    itemValues.put(COLUMN_MIN_WIDTH, item.minWidth)
-    itemValues.put(COLUMN_MIN_HEIGHT, item.minHeight)
-
-    if (item.previewImage != null) {
-      val stream = ByteArrayOutputStream()
-      item.previewImage!!.compress(CompressFormat.PNG, 0, stream)
-      itemValues.put(COLUMN_IMAGE, stream.toByteArray())
-    }
-
-    Settings.logger().log(this, Log.INFO, TAG, "createItem: %s (ID: %d)", if (item != null) item.label else "NULL", if (item != null) item.id as Any else -1)
-    _db.insert(TABLE_APPWIDGET, null, itemValues)
-  }
-
-  fun deleteWidgetItem(item: Item) {
-    // delete the item itself
-    _db.delete(TABLE_APPWIDGET, "$COLUMN_TIME = ?", arrayOf<String>(item.id.toString()))
-  }
-
-  fun updateWidgetItem(item: AppWidget) {
-    deleteWidgetItem(item)
-    addWidgetItem(item)
-  }
-
-  private fun getWidgetSelection(cursor: Cursor): AppWidget {
-    val item = AppWidget()
-    val id = Integer.parseInt(cursor.getString(cursor.getColumnIndex(COLUMN_TIME)))
-    val label = cursor.getString(cursor.getColumnIndex(COLUMN_LABEL))
-    val spanX = Integer.parseInt(cursor.getString(cursor.getColumnIndex(COLUMN_SPAN_X)))
-    val spanY = Integer.parseInt(cursor.getString(cursor.getColumnIndex(COLUMN_SPAN_Y)))
-    val minSpanX = Integer.parseInt(cursor.getString(cursor.getColumnIndex(COLUMN_MIN_SPAN_X)))
-    val minSpanY = Integer.parseInt(cursor.getString(cursor.getColumnIndex(COLUMN_MIN_SPAN_Y)))
-    val minHeight = Integer.parseInt(cursor.getString(cursor.getColumnIndex(COLUMN_MIN_HEIGHT)))
-    val minWidth = Integer.parseInt(cursor.getString(cursor.getColumnIndex(COLUMN_MIN_WIDTH)))
-    val imgBlob = cursor.getBlob(cursor.getColumnIndex(COLUMN_IMAGE))
-
-    item.setId(id)
-    item.label = label
-    item.spanX = spanX
-    item.spanY = spanY
-    item.type = Item.Type.APPWIDGET
-    item.previewImage = BitmapFactory.decodeByteArray(imgBlob, 0, imgBlob.size)
-    item.minWidth = minWidth
-    item.minHeight = minHeight
-    item.minSpanX = minSpanX
-    item.minSpanY = minSpanY
-
-    return item
-  }
-
   fun createShortcut(shortcut: ShortcutItem) {
     val itemValues = ContentValues()
     itemValues.put(COLUMN_TIME, shortcut.id)
@@ -453,33 +396,99 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
     return builder.build()
   }
 
+  fun createPlugin(plugin: Plugin) {
+    val itemValues = ContentValues()
+    itemValues.put(COLUMN_TIME, plugin._id)
+    itemValues.put(COLUMN_LABEL, plugin._label)
+    itemValues.put(COLUMN_URI, plugin._uri.toString())
+    itemValues.put(COLUMN_PACKAGE_NAME, plugin._packageName)
+    itemValues.put(COLUMN_ENABLED, if (plugin._enabled) 1 else 0)
+    if (plugin._icon != null) {
+      val stream = ByteArrayOutputStream()
+      plugin._icon!!.compress(CompressFormat.PNG, 0, stream)
+      itemValues.put(COLUMN_ICON, stream.toByteArray())
+    }
+    _db.insert(TABLE_PLUGIN, null, itemValues)
+  }
+
+  fun savePlugin(plugin: Plugin) {
+    val SQL_QUERY_SPECIFIC = SQL_QUERY + TABLE_PLUGIN + " WHERE " + COLUMN_TIME + " = " + plugin._id
+    val cursor = _db.rawQuery(SQL_QUERY_SPECIFIC, null)
+    if (cursor.count == 0) {
+      createPlugin(plugin)
+    } else if (cursor.count == 1) {
+      updatePlugin(plugin)
+    }
+    if (!cursor.isClosed)
+      cursor.close()
+  }
+
+  fun updatePlugin(plugin: Plugin) {
+    val itemValues = ContentValues()
+    itemValues.put(COLUMN_LABEL, plugin._label)
+    itemValues.put(COLUMN_URI, plugin._uri.toString())
+    itemValues.put(COLUMN_PACKAGE_NAME, plugin._packageName)
+    itemValues.put(COLUMN_ENABLED, if (plugin._enabled) 1 else 0)
+
+    if (plugin._icon != null) {
+      val stream = ByteArrayOutputStream()
+      plugin._icon!!.compress(CompressFormat.PNG, 0, stream)
+      itemValues.put(COLUMN_ICON, stream.toByteArray())
+    }
+
+    _db.update(TABLE_PLUGIN, itemValues, COLUMN_TIME + " = " + plugin._id, null)
+  }
+
+  fun deletePlugin(plugin: Plugin) {
+    _db.delete(TABLE_PLUGIN, "$COLUMN_TIME = ?", arrayOf<String>(plugin._id.toString()))
+  }
+
+  fun getPluginSelection(cursor: Cursor): Plugin {
+    val id = Integer.parseInt(cursor.getString(cursor.getColumnIndex(COLUMN_TIME)))
+    val label = cursor.getString(cursor.getColumnIndex(COLUMN_LABEL))
+    val imgBlob = cursor.getBlob(cursor.getColumnIndex(COLUMN_ICON))
+    val packageName = cursor.getString(cursor.getColumnIndex(COLUMN_PACKAGE_NAME))
+    val uri = cursor.getString(cursor.getColumnIndex(COLUMN_URI))
+    val enabledInt = Integer.parseInt(cursor.getString(cursor.getColumnIndex(COLUMN_ENABLED)))
+    return Plugin().build {
+      id(id)
+      label(label)
+      packageName(packageName)
+      uri(uri)
+
+      if (enabledInt == 1) {
+        enabled(true)
+      } else {
+        enabled(false)
+      }
+      if (imgBlob != null) {
+        icon(BitmapFactory.decodeByteArray(imgBlob, 0, imgBlob.size))
+      }
+    }
+  }
+
   companion object {
     const val TAG = "DatabaseHelper"
     const val DATABASE_NAME = "trinity.db"
     const val TABLE_HOME = "home"
-    const val TABLE_APPWIDGET = "appwidget"
     const val TABLE_SHORTCUTS = "shortcuts"
+    const val TABLE_PLUGIN = "plugins"
     const val COLUMN_PACKAGE_NAME = "package_name"
     const val COLUMN_CLASS_NAME = "class_name"
     const val COLUMN_ACTION = "action"
+    const val COLUMN_ENABLED = "enabled"
     const val COLUMN_INDEX = "shortcut_index"
     const val COLUMN_ICON = "icon"
     const val COLUMN_TIME = "time"
     const val COLUMN_TYPE = "type"
     const val COLUMN_LABEL = "label"
+    const val COLUMN_URI = "uri"
     const val COLUMN_X_POS = "x"
     const val COLUMN_Y_POS = "y"
     const val COLUMN_DATA = "data"
     const val COLUMN_PAGE = "page"
     const val COLUMN_DESKTOP = "workspace"
     const val COLUMN_STATE = "state"
-    const val COLUMN_SPAN_X = "span_x"
-    const val COLUMN_SPAN_Y = "span_y"
-    const val COLUMN_IMAGE = "image"
-    const val COLUMN_MIN_WIDTH = "min_width"
-    const val COLUMN_MIN_HEIGHT = "min_height"
-    const val COLUMN_MIN_SPAN_X = "min_span_x"
-    const val COLUMN_MIN_SPAN_Y = "min_span_y"
 
     const val SQL_CREATE_HOME = "CREATE TABLE " + TABLE_HOME + " (" +
       COLUMN_TIME + " INTEGER PRIMARY KEY," +
@@ -491,16 +500,6 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
       COLUMN_PAGE + " INTEGER," +
       COLUMN_DESKTOP + " INTEGER," +
       COLUMN_STATE + " INTEGER)"
-    const val SQL_CREATE_APPWIDGET = "create table $TABLE_APPWIDGET (" +
-      "$COLUMN_TIME INTEGER PRIMARY KEY," +
-      "$COLUMN_LABEL VARCHAR," +
-      "$COLUMN_SPAN_X INTEGER," +
-      "$COLUMN_SPAN_Y INTEGER," +
-      "$COLUMN_MIN_HEIGHT INTEGER," +
-      "$COLUMN_MIN_WIDTH INTEGER," +
-      "$COLUMN_MIN_SPAN_Y INTEGER," +
-      "$COLUMN_MIN_SPAN_X INTEGER," +
-      "$COLUMN_IMAGE BLOB)"
     const val SQL_CREATE_SHORTCUTS = "create table $TABLE_SHORTCUTS (" +
       "$COLUMN_TIME INTEGER PRIMARY KEY," +
       "$COLUMN_INDEX INTEGER," +
@@ -510,8 +509,25 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
       "$COLUMN_CLASS_NAME VARCHAR," +
       "$COLUMN_PACKAGE_NAME VARCHAR," +
       "$COLUMN_ICON BLOB)"
+    const val SQL_CREATE_PLUGIN = "create table $TABLE_PLUGIN (" +
+      "$COLUMN_TIME INTEGER PRIMARY KEY," +
+      "$COLUMN_LABEL VARCHAR," +
+      "$COLUMN_ENABLED INTEGER," +
+      "$COLUMN_ICON BLOB," +
+      "$COLUMN_PACKAGE_NAME VARCHAR," +
+      "$COLUMN_URI VARCHAR)"
 
     const val SQL_DELETE = "DROP TABLE IF EXISTS "
     const val SQL_QUERY = "SELECT * FROM "
+
+    @SuppressLint("StaticFieldLeak")
+    private var mInstance: DatabaseHelper? = null
+
+    fun getInstance(context: Context): DatabaseHelper {
+      if (mInstance == null)
+        mInstance = DatabaseHelper(context)
+
+      return mInstance!!
+    }
   }
 }
