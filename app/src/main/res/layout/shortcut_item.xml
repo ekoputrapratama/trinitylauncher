@@ -8,9 +8,10 @@
 
   <ImageView
     android:id="@+id/icon"
-    android:layout_width="42dp"
-    android:layout_height="42dp"
+    android:layout_width="48dp"
+    android:layout_height="48dp"
     android:layout_marginBottom="10dp"
+    android:gravity="center"
     android:scaleType="fitCenter"
     android:src="@mipmap/ic_launcher" />
 
@@ -20,7 +21,7 @@
     android:layout_height="wrap_content"
     android:ellipsize="end"
     android:gravity="center"
-    android:text="Application Name"
+    android:text="@string/placeholder"
     android:textAlignment="center"
-    android:textSize="12sp" />
+    android:textSize="10sp" />
 </LinearLayout>
