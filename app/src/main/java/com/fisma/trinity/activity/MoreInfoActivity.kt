@@ -13,7 +13,6 @@ class MoreInfoActivity : ThemeActivity() {
 
     val toolbar = findViewById<Toolbar>(R.id.toolbar)
     setSupportActionBar(toolbar)
-    toolbar.setBackgroundColor(_appSettings!!.primaryColor)
 
     supportActionBar!!.setDisplayHomeAsUpEnabled(true)
 
