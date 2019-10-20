@@ -80,14 +80,10 @@ class AppWidgetPickerPage : ViewPager {
     _rowCellCount = 4
   }
 
-  fun isWidgetsLoaded(): Boolean {
-    return _task != null && _task!!.status != AsyncTask.Status.RUNNING
-  }
-
   private fun calculatePage() {
     Log.d("AppWidgetPickerPage", "calculatePages()")
     _pageCount = 0
-    var widgetsSize = _widgets!!.size
+    var widgetsSize = _widgets.size
     var size = widgetsSize - _rowCellCount * _columnCellCount
     while (size >= _rowCellCount * _columnCellCount) {
       _pageCount++
@@ -109,19 +105,8 @@ class AppWidgetPickerPage : ViewPager {
       setLandscapeValue()
     }
 
-    var alreadyMeasured = false
-//    val db = HomeActivity._db
-//    if (db.appWidgets.isNotEmpty()) {
-//      db.appWidgets.sortBy { item -> item.label }
-//      _widgets = db.appWidgets
-//      calculatePage()
-//      adapter = Adapter()
-//    }
-
-
     Settings.appLoader().addUpdateListener(object : AppUpdateListener {
       override fun onAppUpdated(apps: List<App>): Boolean {
-        Log.d("AppWidgetPickerPage", "onAppUpdated()")
         if (_task == null || _task!!.status == AsyncTask.Status.FINISHED)
           _task = AsyncGetWidgets().execute()
         else if (_task!!.status == AsyncTask.Status.RUNNING) {
@@ -132,9 +117,9 @@ class AppWidgetPickerPage : ViewPager {
       }
     })
     val grid = HomeActivity.mWorkspaceGrid!!
-    grid.addGridChangeListener(object  : DynamicGrid.DynamicGridChangeListener {
+    grid.addGridChangeListener(object : DynamicGrid.DynamicGridChangeListener {
       override fun onGridChange(width: Int, height: Int, cellWidth: Int, cellHeight: Int) {
-        if(_task != null && _task!!.status != AsyncTask.Status.FINISHED) {
+        if (_task != null && _task!!.status != AsyncTask.Status.FINISHED) {
           _task!!.cancel(true)
         }
         _task = AsyncGetWidgets().execute()
@@ -145,7 +130,7 @@ class AppWidgetPickerPage : ViewPager {
 
   fun getWidgetPreview(info: AppWidgetProviderInfo): Bitmap? {
     var drawable: Drawable? = null
-    val mManager = AppWidgetManagerCompat.getInstance(context)
+    val mManager = HomeActivity.mAppWidgetManager
     var preview: Bitmap? = null
 
     if (info.previewImage != 0) {
@@ -198,7 +183,7 @@ class AppWidgetPickerPage : ViewPager {
 
   fun getWidgetProjectionImage(info: AppWidgetProviderInfo, minWidth: Int, minHeight: Int): Bitmap? {
     var drawable: Drawable? = null
-    val mManager = AppWidgetManagerCompat.getInstance(context)
+    val mManager = HomeActivity.mAppWidgetManager
 
     if (info.previewImage != 0) {
       drawable = mManager.loadPreview(info)
@@ -230,11 +215,11 @@ class AppWidgetPickerPage : ViewPager {
       val x = (originalBitmap!!.width - previewWidth) / 2
       val y = (originalBitmap.height - previewHeight) / 2
       ImageUtil.renderDrawableToBitmap(drawable, originalBitmap, x, y, previewWidth, previewHeight, 75)
-//      originalBitmap = ImageUtil.grayscaleImage(originalBitmap)
-      // if scaled preview height is less than minimum height add top padding so the image is centered vertically
+
+      // if scaled preview height is less than minimum height add top and bottom padding so the image is centered vertically
       if (previewHeight < minHeight) {
-        val paddingX = (minHeight - previewHeight)
-        originalBitmap = ImageUtil.addPadding(originalBitmap, 0f, paddingX.toFloat())
+        val paddingY = (minHeight - previewHeight)
+        originalBitmap = ImageUtil.addPadding(originalBitmap, 0f, paddingY.toFloat())
       } else if (previewHeight > minHeight) {
         originalBitmap = ImageUtil.resizeImage(resources, originalBitmap, previewWidth, minHeight)
       }
@@ -270,10 +255,8 @@ class AppWidgetPickerPage : ViewPager {
 
       val item = _widgets[pos]
       val view = ItemViewFactory.getItemView(context, null, DragAction.Action.WIDGET_PREVIEW, item) as AppWidgetPreview
-      if (item.projectionImage == null && item.widgetInfo != null) {
-        Log.d("AppWidgetPicker", "preload widget projection image")
-      }
-      view.applyFromItem(item, -1)
+
+      view.applyFromItem(item)
       view.tag = item
       return view
     }
@@ -332,7 +315,6 @@ class AppWidgetPickerPage : ViewPager {
     private var newWidgets: ArrayList<AppWidget>? = null
 
     override fun onPreExecute() {
-      Log.d("AsyncGetWidget", "onPreExecute()")
       _widgets.clear()
       newWidgets = ArrayList()
       super.onPreExecute()
@@ -344,11 +326,12 @@ class AppWidgetPickerPage : ViewPager {
     }
 
     override fun doInBackground(vararg p0: Any?): Any? {
-      Log.d("AsyncGetWidget", "doInBackground()")
+      val mAppWidgetManager = HomeActivity.mAppWidgetManager
       val providers = ArrayList<AppWidgetProviderInfo>()
-      providers.addAll(AppWidgetManagerCompat.getInstance(context).allProviders)
+      providers.addAll(mAppWidgetManager.allProviders)
       val grid = HomeActivity.mWorkspaceGrid!!
       for (info in providers) {
+
         val widget = AppWidget()
         widget.type = Item.Type.APPWIDGET
         widget.label = info.label
@@ -376,8 +359,7 @@ class AppWidgetPickerPage : ViewPager {
     }
 
     override fun onPostExecute(result: Any?) {
-      Log.d("AsyncGetWidget", "onPostExecute()")
-      HomeActivity.launcher.runOnUiThread { ->
+      HomeActivity.launcher.runOnUiThread {
         if (newWidgets != null && newWidgets!!.isNotEmpty()) {
           newWidgets!!.sortBy { s -> s.label }
           _widgets = newWidgets!!
@@ -390,7 +372,6 @@ class AppWidgetPickerPage : ViewPager {
   }
 
   companion object {
-
     private var _columnCellCount: Int = 0
     private var _rowCellCount: Int = 0
   }
