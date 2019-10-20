@@ -16,3 +16,4 @@
 #   public *;
 #}
 -keep class com.woxthebox.draglistview.** { *; }
+-keep class com.hoko.blur.opengl.functor.** { *; }
