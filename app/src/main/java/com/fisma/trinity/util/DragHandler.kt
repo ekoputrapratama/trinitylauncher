@@ -14,6 +14,7 @@ import com.fisma.trinity.model.Item
 import com.fisma.trinity.viewutil.WorkspaceCallback
 import com.fisma.trinity.widgets.AppItemView
 import com.fisma.trinity.widgets.CellContainer
+import com.fisma.trinity.widgets.Workspace
 
 
 object DragHandler {
@@ -22,8 +23,6 @@ object DragHandler {
 
   fun startDrag(view: View, item: Item, action: DragAction.Action, workspaceCallback: WorkspaceCallback?) {
     var v = view
-    val type = if (item.type == Item.Type.APP) "app item" else if (item.type == Item.Type.APPWIDGET) "appwidget" else ""
-    Log.d("DragHandler", "start dragging $type")
     if (action == DragAction.Action.APPWIDGET) {
       v = view.findViewById(R.id.widget_preview)
       v.tag = view.tag
@@ -31,30 +30,27 @@ object DragHandler {
 
     _cachedDragBitmap = loadBitmapFromView(v)
     if (item.type == Item.Type.APPWIDGET && action == DragAction.Action.DESKTOP) {
-      Log.d(TAG, "set widget projection image")
-//      _cachedDragBitmap = item.projectionImage
       (view as FrameLayout).removeAllViews()
       val p = view.parent as CellContainer
       p.removeView(view)
     }
 
     HomeActivity._launcher?.dragLayer?.startDragNDropOverlay(v, item, action)
-    if (workspaceCallback != null) {
-      Log.d(TAG, "setLastItem to workspace")
-      workspaceCallback.setLastItem(item, v)
-    }
+    workspaceCallback?.setLastItem(item, v)
 
   }
 
   fun getLongClick(item: Item, action: DragAction.Action, workspaceCallback: WorkspaceCallback?): View.OnLongClickListener {
     return View.OnLongClickListener { view ->
-      if (Settings.appSettings().desktopLock) {
-        return@OnLongClickListener false
+      if (!Workspace.isInEditMode()) {
+        if (Settings.appSettings().desktopLock) {
+          return@OnLongClickListener false
+        }
+        if (Settings.appSettings().gestureFeedback) {
+          Tool.vibrate(view)
+        }
+        startDrag(view, item, action, workspaceCallback)
       }
-      if (Settings.appSettings().gestureFeedback) {
-        Tool.vibrate(view)
-      }
-      startDrag(view, item, action, workspaceCallback)
       true
     }
   }
