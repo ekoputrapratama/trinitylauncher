@@ -1,9 +1,7 @@
 package com.fisma.trinity.widgets
 
 import `in`.championswimmer.sfg.lib.SimpleFingerGestures
-import android.appwidget.AppWidgetHostView
-import android.appwidget.AppWidgetProviderInfo
-import android.content.ComponentName
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Point
@@ -18,7 +16,6 @@ import androidx.viewpager.widget.ViewPager
 import com.fisma.trinity.Constants
 import com.fisma.trinity.activity.HomeActivity
 import com.fisma.trinity.manager.Settings
-import com.fisma.trinity.model.App
 import com.fisma.trinity.model.AppWidget
 import com.fisma.trinity.model.Item
 import com.fisma.trinity.util.DragAction
@@ -63,13 +60,6 @@ class Workspace : ViewPager, WorkspaceCallback {
     alreadyMeasured = true
   }
 
-  var downX = 0f
-  override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
-    super.onLayout(changed, l, t, r, b)
-    alreadyMeasured = true
-    Log.d(TAG, "workpsace height=${height} width=${width}")
-  }
-
   inner class DesktopAdapter(private val _desktop: Workspace) : PagerAdapter() {
 
     private val gestureListener: SimpleFingerGestures.OnFingerGestureListener
@@ -83,11 +73,11 @@ class Workspace : ViewPager, WorkspaceCallback {
         mySfg.setOnFingerGestureListener(gestureListener)
         layout.setGestures(mySfg)
         layout.setGridSize(Settings.appSettings().desktopColumnCount, Settings.appSettings().desktopRowCount)
-        layout.setOnClickListener(OnClickListener { exitDesktopEditMode() })
-        layout.setOnLongClickListener(OnLongClickListener {
+        layout.setOnClickListener { exitDesktopEditMode() }
+        layout.setOnLongClickListener {
           enterDesktopEditMode()
           true
-        })
+        }
 
         return layout
       }
@@ -115,7 +105,7 @@ class Workspace : ViewPager, WorkspaceCallback {
     fun removePage(position: Int, deleteItems: Boolean) {
       if (deleteItems) {
         if (position == 0) return
-        var page = _desktop.pages[position]
+        val page = _desktop.pages[position]
         val cells = page.allCells
         for (view in cells) {
           val item = view.tag
@@ -129,7 +119,7 @@ class Workspace : ViewPager, WorkspaceCallback {
     }
 
     override fun getItemPosition(`object`: Any): Int {
-      return PagerAdapter.POSITION_NONE
+      return POSITION_NONE
     }
 
     override fun getCount(): Int {
@@ -154,10 +144,8 @@ class Workspace : ViewPager, WorkspaceCallback {
       val scaleFactor = 0.8f
       val translateFactor = Tool.dp2px(40f).toFloat()
       for (v in _desktop.pages) {
-        if (v is CellContainer) {
-          v.setBlockTouch(true)
-          v.animateBackgroundShow()
-        }
+        v.setBlockTouch(true)
+        v.animateBackgroundShow()
         val animation = v.animate().scaleX(scaleFactor).scaleY(scaleFactor).translationY(translateFactor)
         animation.interpolator = AccelerateDecelerateInterpolator()
       }
@@ -172,10 +160,8 @@ class Workspace : ViewPager, WorkspaceCallback {
       val scaleFactor = 1.0f
       val translateFactor = 0.0f
       for (v in _desktop.pages) {
-        if (v is CellContainer) {
-          v.setBlockTouch(false)
-          v.animateBackgroundHide()
-        }
+        v.setBlockTouch(false)
+        v.animateBackgroundHide()
         val animation = v.animate().scaleX(scaleFactor).scaleY(scaleFactor).translationY(translateFactor)
         animation.interpolator = AccelerateDecelerateInterpolator()
       }
@@ -189,9 +175,7 @@ class Workspace : ViewPager, WorkspaceCallback {
 
   fun setBlockTouch(shouldBlock: Boolean) {
     for (v in pages) {
-      if (v is CellContainer) {
-        v.setBlockTouch(shouldBlock)
-      }
+      v.setBlockTouch(shouldBlock)
     }
   }
 
@@ -200,7 +184,6 @@ class Workspace : ViewPager, WorkspaceCallback {
   }
 
   fun initWorkspace() {
-    Log.d(TAG, "initWorkpsace()")
     _adapter = DesktopAdapter(this)
     adapter = _adapter
 
@@ -219,7 +202,7 @@ class Workspace : ViewPager, WorkspaceCallback {
       for (itemCount in page.indices) {
         val item = page[itemCount]
         if (item.x + item.spanX <= columns && item.y + item.spanY <= rows) {
-          if(item.type == Item.Type.APPWIDGET) {
+          if (item.type == Item.Type.APPWIDGET) {
             addWidgetToPage(item, pageCount)
           } else {
             addItemToPage(item, pageCount)
@@ -435,6 +418,7 @@ class Workspace : ViewPager, WorkspaceCallback {
 
   companion object {
     const val TAG = "Workspace"
+    @SuppressLint("StaticFieldLeak")
     var mInstance: Workspace? = null
     var alreadyMeasured: Boolean = false
 
@@ -454,144 +438,7 @@ class Workspace : ViewPager, WorkspaceCallback {
       mInstance!!.setBlockTouch(false)
     }
 
-    fun getMinWidthForWidget(context: Context, info: AppWidgetProviderInfo): Int {
-      val padding = AppWidgetHostView.getDefaultPaddingForWidget(context, info.provider, null)
-      var minWidth = info.minWidth // + padding.left + padding.right
-      val columnCount = Settings.appSettings().desktopColumnCount
-
-      // get grid item width by dividing workspace width by column count
-      val itemWidth = (if (mInstance!!.width == 0) mInstance!!.measuredWidth else mInstance!!.width) / columnCount
-      val halfWidth = itemWidth / 2
-
-      // get the real minWidth, which is different based on user configuration for the desktop
-
-      if (minWidth <= itemWidth) {
-        return itemWidth
-      }
-      var spanX = 0
-      for (i in 1 until columnCount + 1) {
-        Log.d("getMinWidthForWidget", "============ COLUMN $i ================")
-        val currentWidth = itemWidth * i
-        if (minWidth <= currentWidth) {
-          Log.d("getMinWidthForWidget", "column $i ($minWidth <= $currentWidth)")
-          val w = currentWidth % minWidth
-          if (w > halfWidth || (w == 0 && minWidth == currentWidth)) {
-            Log.d("getMinWidthForWidget", "$w > $halfWidth")
-            minWidth = currentWidth
-            spanX++
-            Log.d("getMinWidthForWidget", "minWidth = $minWidth")
-          } else {
-            minWidth = currentWidth - itemWidth
-            Log.d("getMinWidthForWidget", "minWidth = $minWidth")
-          }
-          break
-        }
-        spanX++
-      }
-      Log.d("getMinWidthForWidget", "${info.label} widgetMinWidth=${info.minWidth} minWidth=$minWidth itemWidth=$itemWidth spanX=$spanX columnCount=$columnCount")
-      return minWidth
-    }
-
-    fun getMinHeightForWidget(context: Context, info: AppWidgetProviderInfo): Int {
-      val padding = AppWidgetHostView.getDefaultPaddingForWidget(context, info.provider, null)
-      var minHeight = info.minHeight // + padding.top + padding.bottom
-      val rowCount = Settings.appSettings().desktopRowCount
-
-      // get grid item height by dividing workspace height by row count
-      val itemHeight = (if (mInstance!!.height == 0) mInstance!!.measuredHeight else mInstance!!.height) / rowCount
-      val halfHeight = itemHeight / 2
-
-      // get the real minHeight, which is different based on user configuration for the desktop
-
-      if (minHeight <= itemHeight) {
-        return itemHeight
-      }
-      var spanY = 0
-      for (i in 1 until rowCount + 1) {
-        Log.d("getMinHeightForWidget", "============ COLUMN $i ================")
-        val currentHeight = itemHeight * i
-        if (minHeight <= currentHeight) {
-          Log.d("getMinHeightForWidget", "column $i ($minHeight <= $currentHeight)")
-          val w = currentHeight % minHeight
-          if (w > halfHeight || (w == 0 && minHeight == currentHeight)) {
-            minHeight = currentHeight
-            spanY++
-          } else {
-            minHeight = currentHeight - itemHeight
-          }
-          break
-        }
-        spanY++
-      }
-      Log.d("getMinHeightForWidget", "${info.label} widgetMinHeight=${info.minWidth} minHeight=$minHeight itemHeight=$itemHeight spanY=$spanY rowCount=$rowCount")
-      return minHeight
-    }
-
-    fun getMinSpanForWidget(context: Context, info: AppWidgetProviderInfo): ArrayList<Int> {
-      return getSpanForWidget(context, info.provider, info.minResizeWidth, info.minResizeHeight)
-    }
-
-    fun getSpanForWidget(context: Context, componentName: ComponentName, minWidth: Int, minHeight: Int): ArrayList<Int> {
-      val padding = AppWidgetHostView.getDefaultPaddingForWidget(context, componentName, null)
-      var spanXY = arrayListOf(0, 0)
-
-      val columnCount = Settings.appSettings().desktopColumnCount
-      val rowCount = Settings.appSettings().desktopRowCount
-
-      val itemWidth = (if (mInstance!!.width == 0) mInstance!!.measuredWidth else mInstance!!.width) / columnCount
-      val itemHeight = (if (mInstance!!.height == 0) mInstance!!.measuredHeight else mInstance!!.height) / rowCount
-      val halfWidth = itemWidth / 2
-      val halfHeight = itemHeight / 2
-
-      var widgetMinHeight = minHeight // + padding.top + padding.bottom
-      var widgetMinWidth = minWidth // + padding.left + padding.right
-
-      if (widgetMinWidth <= itemWidth && widgetMinHeight <= itemHeight) {
-        spanXY[0] = 1
-        spanXY[1] = 1
-      }
-
-      if (spanXY[0] == 0 && spanXY[1] == 0) {
-        var spanX = 0
-        var spanY = 0
-        for (i in 1 until columnCount + 1) {
-          val currentWidth = itemWidth * i
-          if (widgetMinWidth <= currentWidth) {
-            val w = currentWidth % widgetMinWidth
-            if (w > halfWidth || (w == 0 && widgetMinWidth == currentWidth)) {
-              spanX++
-            }
-            break
-          } else {
-            spanX++
-          }
-        }
-        spanXY[0] = spanX
-
-        for (i in 1 until rowCount + 1) {
-          val currentHeight = itemHeight * i
-
-          if (widgetMinHeight < currentHeight) {
-            val h = currentHeight % widgetMinHeight
-            if (h > halfHeight || i == 1) {
-              spanY++
-            }
-            break
-          } else {
-            spanY++
-          }
-        }
-        spanXY[1] = spanY
-      }
-      Log.d("getSpanForWidget", "spanX=${spanXY[0]} spanY=${spanXY[1]}")
-      return spanXY
-    }
-
-    fun getSpanForWidget(context: Context, info: AppWidgetProviderInfo): ArrayList<Int> {
-      return getSpanForWidget(context, info.provider, info.minWidth, info.minHeight)
-    }
-
-    fun handleOnDropOver(homeActivity: HomeActivity, dropItem: Item?, item: Item?, itemView: View, parent: CellContainer, page: Int, itemPosition: Constants.ItemPosition, callback: WorkspaceCallback): Boolean {
+    fun handleOnDropOver(dropItem: Item?, item: Item?, itemView: View, parent: CellContainer, page: Int, itemPosition: Constants.ItemPosition, callback: WorkspaceCallback): Boolean {
       if (item != null) {
         if (dropItem != null) {
           val type = item.type
@@ -646,8 +493,6 @@ class Workspace : ViewPager, WorkspaceCallback {
                   launcher.dock.consumeLastItem()
                 }
                 return true
-              }
-              Item.Type.APPWIDGET -> {
               }
               else -> {
               }
