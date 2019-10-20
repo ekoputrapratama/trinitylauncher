@@ -32,7 +32,6 @@ class SettingsActivity : ThemeActivity() {
     setSupportActionBar(toolbar)
     toolbar!!.navigationIcon = resources.getDrawable(R.drawable.ic_arrow_back_white_24px)
     toolbar!!.setNavigationOnClickListener { v -> onBackPressed() }
-    toolbar!!.setBackgroundColor(_appSettings!!.primaryColor)
 
     prefFrag = SettingsMasterFragment()
     val transaction = supportFragmentManager.beginTransaction()
