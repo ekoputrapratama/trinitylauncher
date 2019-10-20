@@ -1,5 +1,6 @@
 package com.fisma.trinity.viewutil
 
+import android.graphics.Color
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -20,6 +21,11 @@ class PopupIconLabelItem(private val _labelRes: Int, private val _iconRes: Int) 
       this.cardView = itemView as CardView
       this.labelView = itemView.findViewById(R.id.item_popup_label)
       this.iconView = itemView.findViewById(R.id.item_popup_icon)
+      val theme = itemView.context.theme
+      val attrs = IntArray(1) { R.attr.popupItemBackground }
+      val typedArray = theme.obtainStyledAttributes(attrs)
+      val color = typedArray.getColor(0, Color.WHITE)
+      cardView.setCardBackgroundColor(color)
     }
   }
 
