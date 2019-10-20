@@ -14,7 +14,7 @@ class TrinitySettings(activity: HomeActivity) : Settings() {
   override var appSettings: AppSettings = AppSettings.get()
   override var appContext: Context = TrinityApplication.get() as Context
   override var appLoader: AppManager = AppManager.getInstance(activity)!!
-  override var dataManager: DatabaseHelper = DatabaseHelper(activity)
+  override var dataManager: DatabaseHelper = DatabaseHelper.getInstance(activity)
   override lateinit var logger: Logger
   override lateinit var workspaceGestureCallback: WorkspaceGestureListener.WorkspaceGestureCallback
   override var eventHandler: EventHandler = HomeEventHandler()
