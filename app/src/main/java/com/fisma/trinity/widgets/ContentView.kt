@@ -1,5 +1,7 @@
 package com.fisma.trinity.widgets
 
+import android.annotation.SuppressLint
+import android.app.WallpaperManager
 import android.content.Context
 import android.util.AttributeSet
 import android.util.Log
@@ -9,12 +11,17 @@ import androidx.viewpager.widget.ViewPager
 import com.fisma.trinity.R
 import com.fisma.trinity.activity.HomeActivity
 import java.util.ArrayList
+import androidx.core.view.ViewCompat.setAlpha
+import kotlin.math.abs
+
 
 class ContentView : ViewPager {
 
   companion object {
     const val TAG = "ContentView"
+    @SuppressLint("StaticFieldLeak")
     var mInstance: ContentView? = null
+
     fun isDashboardOpened(): Boolean {
       return mInstance!!.currentItem == 0
     }
@@ -25,9 +32,6 @@ class ContentView : ViewPager {
     get() = _pages
 
   private var _adapter: PageAdapter? = null
-  val currentPage: View
-    get() = _pages[currentItem]
-
   internal var _dashboardView: DashboardView? = null
   internal var _content: View? = null
 
@@ -48,21 +52,49 @@ class ContentView : ViewPager {
     currentItem = 1
 
     addOnPageChangeListener(object : OnPageChangeListener {
+      var dragging = false
+      var settling = false
+      var lastItem: Int = 1
+      var lastOffset: Float = 0f
       override fun onPageScrollStateChanged(state: Int) {
-        Log.d(TAG, "onPageScrollStateChanged state=$state")
+        if (state != SCROLL_STATE_SETTLING && state != SCROLL_STATE_IDLE) lastItem = currentItem
+        dragging = SCROLL_STATE_DRAGGING == state
+        settling = SCROLL_STATE_SETTLING == state
+        val background = HomeActivity.launcher.background
+
+        // onPageSelected would not be called if the range doesn't reach threshold
+        // so we need to handle it here
+        if (state != SCROLL_STATE_IDLE) {
+          if (lastItem == 1) {
+            if (settling && lastOffset <= 0.4f)
+              background.animate().alpha(1f)
+            else if (settling && lastOffset > 0.4f)
+              background.animate().alpha(0f)
+          } else {
+            if (settling && lastOffset <= 0.6f)
+              background.animate().alpha(1f)
+            else if (settling && lastOffset > 0.6f)
+              background.animate().alpha(0f)
+          }
+        }
       }
 
       override fun onPageScrolled(position: Int, offset: Float, offsetPixels: Int) {
-        Log.d(TAG, "onPageScrolled offset=$offset position=$position offsetPixels=$offsetPixels")
+        val background = HomeActivity.launcher.background
+        if (dragging && offset != 0f) {
+          lastOffset = offset
+          background.alpha = 1 - offset
+        }
       }
 
       override fun onPageSelected(position: Int) {
-        Log.d(TAG, "onPageSelected position=$position")
         val background = HomeActivity.launcher.background
-        if (position == 1) {
-          background.alpha = 0.0f
-        } else {
-          background.alpha = 1.0f
+        if (settling) {
+          if (position == 1) {
+            background.animate().alpha(0f)
+          } else {
+            background.animate().alpha(1f)
+          }
         }
       }
     })
@@ -102,7 +134,7 @@ class ContentView : ViewPager {
     }
 
     override fun getItemPosition(`object`: Any): Int {
-      return PagerAdapter.POSITION_NONE
+      return POSITION_NONE
     }
 
     override fun instantiateItem(parent: ViewGroup, position: Int): Any {
