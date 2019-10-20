@@ -8,7 +8,6 @@ import com.fisma.trinity.compat.AppWidgetManagerCompat
 import android.appwidget.AppWidgetProviderInfo
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
@@ -18,8 +17,9 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import com.fisma.trinity.graphics.FastBitmapDrawable
 import com.fisma.trinity.R
+import com.fisma.trinity.activity.HomeActivity
 import com.fisma.trinity.model.AppWidget
-import com.fisma.trinity.model.Item
+import com.fisma.trinity.util.ImageUtil
 
 
 /**
@@ -34,7 +34,8 @@ class AppWidgetPreview(context: Context, attrs: AttributeSet? = null) : FrameLay
   internal var mIsAppWidget: Boolean = false
   private val mOriginalImagePadding = Rect()
   private var mInfo: Any? = null
-  private val mManager: AppWidgetManagerCompat = AppWidgetManagerCompat.getInstance(context)
+  private val mManager: AppWidgetManagerCompat
+    get() = HomeActivity.mAppWidgetManager
 
   val previewSize: IntArray
     get() {
@@ -62,29 +63,9 @@ class AppWidgetPreview(context: Context, attrs: AttributeSet? = null) : FrameLay
     mOriginalImagePadding.top = image.paddingTop
     mOriginalImagePadding.right = image.paddingRight
     mOriginalImagePadding.bottom = image.paddingBottom
-
-    // Ensure we are using the right text size
-//        val app = LauncherAppState.getInstance()
-//        val grid = app.getDynamicGrid().getDeviceProfile()
-//        val name = findViewById<View>(R.id.widget_name) as TextView
-//        name?.setTextSize(TypedValue.COMPLEX_UNIT_PX, grid.iconTextSizePx)
-//        val dims = findViewById<View>(R.id.widget_dims) as TextView
-//        dims?.setTextSize(TypedValue.COMPLEX_UNIT_PX, grid.iconTextSizePx)
   }
 
-//    override fun onDetachedFromWindow() {
-//        super.onDetachedFromWindow()
-//
-//        if (sDeletePreviewsWhenDetachedFromWindow) {
-//            val image = findViewById<View>(R.id.widget_preview) as ImageView
-//            if (image != null) {
-//                image.setImageDrawable(null)
-//            }
-//        }
-//    }
-
-  fun applyFromItem(item: AppWidget, maxWidth: Int) {
-    Log.d("AppWidgetPreview", "applyFromItem")
+  fun applyFromItem(item: AppWidget) {
     mIsAppWidget = true
     val image = findViewById<View>(R.id.widget_preview) as ImageView
     val name = findViewById<View>(R.id.widget_name) as TextView
@@ -106,9 +87,6 @@ class AppWidgetPreview(context: Context, attrs: AttributeSet? = null) : FrameLay
 
   fun applyFromAppWidgetProviderInfo(info: AppWidgetProviderInfo,
                                      maxWidth: Int, cellSpan: List<Int>) {
-//        val app = LauncherAppState.getInstance()
-//        val grid = app.getDynamicGrid().getDeviceProfile()
-
     mIsAppWidget = true
     mInfo = info
     val image = findViewById<View>(R.id.widget_preview) as ImageView
@@ -116,7 +94,7 @@ class AppWidgetPreview(context: Context, attrs: AttributeSet? = null) : FrameLay
       image.maxWidth = maxWidth
     }
     val name = findViewById<View>(R.id.widget_name) as TextView
-    name.text = AppWidgetManagerCompat.getInstance(context).loadLabel(info)
+    name.text = HomeActivity.mAppWidgetManager.loadLabel(info)
     val dims = findViewById<View>(R.id.widget_dims) as TextView
     if (dims != null) {
       val hSpan = Math.min(cellSpan[0], 2)
@@ -130,13 +108,13 @@ class AppWidgetPreview(context: Context, attrs: AttributeSet? = null) : FrameLay
       if (drawable != null) {
         drawable = drawable.mutate()
       } else {
-//                Log.w(TAG, "Can't load widget preview drawable 0x" +
-//                        Integer.toHexString(info.previewImage) + " for provider: " + info.provider)
+        Log.w(TAG, "Can't load widget preview drawable 0x" +
+          Integer.toHexString(info.previewImage) + " for provider: " + info.provider)
       }
     }
 
-    var previewWidth: Int
-    var previewHeight: Int
+    val previewWidth: Int
+    val previewHeight: Int
     var preview: Bitmap? = null
     val widgetPreviewExists = drawable != null
 
@@ -152,26 +130,15 @@ class AppWidgetPreview(context: Context, attrs: AttributeSet? = null) : FrameLay
       // Draw the scaled preview into the final bitmap
       val x = (preview!!.width - previewWidth) / 2
 
-      renderDrawableToBitmap(drawable, preview, x, 0, previewWidth,
+      ImageUtil.renderDrawableToBitmap(drawable, preview, x, 0, previewWidth,
         previewHeight)
 
-      var bitmap = mManager.getBadgeBitmap(info, preview)
+      val bitmap = mManager.getBadgeBitmap(info, preview)
 
       image.setImageBitmap(bitmap)
     }
 
 
-  }
-
-  private fun renderDrawableToBitmap(d: Drawable?, bitmap: Bitmap?, x: Int, y: Int, w: Int, h: Int) {
-    if (bitmap != null) {
-      val c = Canvas(bitmap)
-      val oldBounds = d!!.copyBounds()
-      d.setBounds(x, y, x + w, y + h)
-      d.draw(c)
-      d.bounds = oldBounds // Restore the bounds
-      c.setBitmap(null)
-    }
   }
 
   fun applyFromResolveInfo(
@@ -191,10 +158,6 @@ class AppWidgetPreview(context: Context, attrs: AttributeSet? = null) : FrameLay
     val image = findViewById<View>(R.id.widget_preview) as AppWidgetImageView
     if (preview != null) {
       image.mAllowRequestLayout = false
-//            Glide.with(context)
-//                    .asBitmap()
-//                    .load(preview)
-//                    .into(image)
 
 
       image.setImageDrawable(preview)
