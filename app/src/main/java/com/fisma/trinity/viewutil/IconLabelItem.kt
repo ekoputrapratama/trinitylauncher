@@ -144,7 +144,7 @@ class IconLabelItem : AbstractItem<IconLabelItem, IconLabelItem.ViewHolder> {
     // icon specific padding
     holder.textView.compoundDrawablePadding = _iconPadding
     if (_iconSize != Integer.MAX_VALUE) {
-      _icon = BitmapDrawable(Settings.appContext().getResources(), Bitmap.createScaledBitmap(ImageUtil.drawableToBitmap(_icon), _iconSize, _iconSize, true))
+      _icon = BitmapDrawable(Settings.appContext().resources, Bitmap.createScaledBitmap(ImageUtil.drawableToBitmap(_icon), _iconSize, _iconSize, true))
       if (_isAppLauncher) {
         _icon.setBounds(0, 0, _iconSize, _iconSize)
       }
@@ -190,10 +190,9 @@ class IconLabelItem : AbstractItem<IconLabelItem, IconLabelItem.ViewHolder> {
 
 
   inner class ViewHolder(itemView: View, item: IconLabelItem) : RecyclerView.ViewHolder(itemView) {
-    var textView: TextView
+    var textView: TextView = itemView as TextView
 
     init {
-      textView = itemView as TextView
       textView.tag = item
     }
   }
