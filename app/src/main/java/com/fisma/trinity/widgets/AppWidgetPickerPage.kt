@@ -1,6 +1,6 @@
 package com.fisma.trinity.widgets
 
-import android.appwidget.AppWidgetHostView
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Color
@@ -17,7 +17,6 @@ import com.fisma.trinity.util.DragAction
 import com.fisma.trinity.util.Tool
 import com.fisma.trinity.viewutil.ItemViewFactory
 import java.util.ArrayList
-import com.fisma.trinity.compat.AppWidgetManagerCompat
 import android.appwidget.AppWidgetProviderInfo
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -53,7 +52,7 @@ class AppWidgetPickerPage : ViewPager {
   }
 
   override fun onConfigurationChanged(newConfig: Configuration) {
-    if (_widgets == null) {
+    if (_widgets.isEmpty()) {
       super.onConfigurationChanged(newConfig)
       return
     }
@@ -81,9 +80,8 @@ class AppWidgetPickerPage : ViewPager {
   }
 
   private fun calculatePage() {
-    Log.d("AppWidgetPickerPage", "calculatePages()")
     _pageCount = 0
-    var widgetsSize = _widgets.size
+    val widgetsSize = _widgets.size
     var size = widgetsSize - _rowCellCount * _columnCellCount
     while (size >= _rowCellCount * _columnCellCount) {
       _pageCount++
@@ -311,6 +309,7 @@ class AppWidgetPickerPage : ViewPager {
     }
   }
 
+  @SuppressLint("StaticFieldLeak")
   private inner class AsyncGetWidgets : AsyncTask<Any, Any, Any>() {
     private var newWidgets: ArrayList<AppWidget>? = null
 
