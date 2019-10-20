@@ -39,6 +39,23 @@ class ImageUtil {
       }
     }
 
+    fun cropImage(bitmap: Bitmap, rect: Rect): Bitmap {
+      val result = Bitmap.createBitmap(rect.right - rect.left, rect.bottom - rect.top, Bitmap.Config.ARGB_8888)
+      val canvas = Canvas(result)
+
+      val top = if (rect.top > 0) {
+        -(bitmap.height - rect.top)
+      } else 0
+      val left = if (rect.left > 0) {
+        -(bitmap.width - rect.left)
+      } else 0
+
+      canvas.drawBitmap(bitmap, left.toFloat(), top.toFloat(), null)
+      canvas.setBitmap(null)
+      result.recycle()
+      return result
+    }
+
     fun grayscaleImage(bitmap: Bitmap): Bitmap {
       val result = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
 
@@ -259,6 +276,7 @@ class ImageUtil {
 
       return Bitmap.createBitmap(bmp, MLeft, MTop, sizeX, sizeY)
     }
+
 
     fun getIcon(context: Context, filename: String): Drawable? {
       val bitmap = BitmapFactory.decodeFile(context.filesDir.toString() + "/icons/" + filename + ".png")
