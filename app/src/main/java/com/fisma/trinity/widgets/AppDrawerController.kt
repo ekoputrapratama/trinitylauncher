@@ -3,11 +3,11 @@ package com.fisma.trinity.widgets
 
 import android.animation.Animator
 import android.content.Context
-import android.os.Build
+import android.graphics.Color
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
-import android.view.WindowInsets
+import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import com.fisma.trinity.R
 import com.fisma.trinity.manager.Settings
@@ -67,6 +67,7 @@ class AppDrawerController : RevealFrameLayout {
 
   fun open(cx: Int, cy: Int) {
     if (_isOpen) return
+    AppWidgetResizeFrame.hideResizeFrame()
     _isOpen = true
     _drawerAnimationTime = Settings.appSettings().animationSpeed * 10
     _appDrawerAnimator = ViewAnimationUtils.createCircularReveal(drawer, cx, cy, 0f, Math.max(width, height).toFloat())
@@ -129,18 +130,12 @@ class AppDrawerController : RevealFrameLayout {
     val layoutInflater = LayoutInflater.from(context)
     _drawerMode = Settings.appSettings().drawerStyle
     visibility = View.GONE
-//        setBackgroundColor(Settings.appSettings().drawerBackgroundColor)
+    setBackgroundColor(Color.parseColor("#CD000000"))
     when (_drawerMode) {
       Mode.GRID -> {
         _drawerViewGrid = AppDrawerGrid(context)
+        _drawerViewGrid.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         addView(_drawerViewGrid)
-      }
-      Mode.PAGE -> {
-        _drawerViewPage = layoutInflater.inflate(R.layout.view_app_drawer_page, this, false) as AppDrawerPage
-        addView(_drawerViewPage)
-        val indicator = layoutInflater.inflate(R.layout.view_drawer_indicator, this, false) as PagerIndicator
-        addView(indicator)
-        _drawerViewPage.withHome(indicator)
       }
       else -> {
         _drawerViewPage = layoutInflater.inflate(R.layout.view_app_drawer_page, this, false) as AppDrawerPage
@@ -150,13 +145,5 @@ class AppDrawerController : RevealFrameLayout {
         _drawerViewPage.withHome(indicator)
       }
     }
-  }
-
-  override fun onApplyWindowInsets(insets: WindowInsets): WindowInsets {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-      setPadding(0, insets.systemWindowInsetTop, 0, insets.systemWindowInsetBottom)
-      return insets
-    }
-    return insets
   }
 }
