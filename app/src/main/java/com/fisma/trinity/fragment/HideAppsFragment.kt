@@ -2,6 +2,7 @@ package com.fisma.trinity.fragment
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Color
 import android.os.AsyncTask
 import android.os.Bundle
 import android.util.Log
@@ -9,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.fragment.app.Fragment
 import com.fisma.trinity.R
 import com.fisma.trinity.model.App
@@ -118,11 +120,13 @@ class HideAppsFragment : Fragment() {
       val appInfo = AdapterView.getItemAtPosition(position) as App
       val checker = view.findViewById<CheckBox>(R.id.CBappSelect)
       val icon = view.findViewById<ViewSwitcher>(R.id.viewSwitcherChecked)
+      val checkedIcon = view.findViewById<ImageView>(R.id.checkedImage)
 
       checker.toggle()
       if (checker.isChecked) {
         _listActivitiesHidden.add(appInfo.componentName)
         if (DEBUG) Log.v(TAG, "Selected App: " + appInfo.label)
+
         if (icon.displayedChild == 0) {
           icon.showNext()
         }
@@ -134,6 +138,14 @@ class HideAppsFragment : Fragment() {
         }
       }
     }
+  }
+
+  fun updateIconForTheme(imageView: ImageView) {
+    val theme = context!!.theme
+    val attrs = IntArray(1) { index -> R.attr.iconColor }
+    val typedArray = theme.obtainStyledAttributes(attrs)
+    val color = typedArray.getColor(0, Color.WHITE)
+    DrawableCompat.setTint(imageView.drawable, color)
   }
 
   private inner class HideAppsAdapter constructor(context: Context, adapterArrayList: ArrayList<App>) : ArrayAdapter<App>(context, R.layout.item_hide_apps, adapterArrayList) {
@@ -149,11 +161,12 @@ class HideAppsFragment : Fragment() {
         holder._apkPackage = view.findViewById(R.id.TVappPackage)
         holder._checker = view.findViewById(R.id.CBappSelect)
         holder._switcherChecked = view.findViewById(R.id.viewSwitcherChecked)
+        holder.checkedImage = view.findViewById(R.id.checkedImage)
         view.tag = holder
       } else {
         holder = view!!.tag as ViewHolder
       }
-
+      updateIconForTheme(holder.checkedImage!!)
       val appInfo = getItem(position)
 
       holder._apkPackage!!.text = appInfo!!.className
@@ -180,6 +193,7 @@ class HideAppsFragment : Fragment() {
     internal var _apkName: TextView? = null
     internal var _apkPackage: TextView? = null
     internal var _apkIcon: ImageView? = null
+    internal var checkedImage: ImageView? = null
     internal var _checker: CheckBox? = null
     internal var _switcherChecked: ViewSwitcher? = null
   }
