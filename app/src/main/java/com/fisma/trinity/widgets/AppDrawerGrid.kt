@@ -12,7 +12,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewTreeObserver
 import android.widget.FrameLayout
-import androidx.core.view.ViewCompat
 import com.fisma.trinity.R
 import com.fisma.trinity.interfaces.AppUpdateListener
 import com.fisma.trinity.manager.Settings
@@ -81,16 +80,23 @@ class AppDrawerGrid(context: Context) : FrameLayout(context) {
       card.setCardBackgroundColor(Color.TRANSPARENT)
       card.cardElevation = 0f
     } else {
-      card.setCardBackgroundColor(Settings.appSettings().drawerCardColor)
+//      card.setCardBackgroundColor(Settings.appSettings().drawerCardColor)
+
+      val attrs = IntArray(1)
+      attrs[0] = R.attr.cardBackgroundColor
+      val typedArray = context.theme.obtainStyledAttributes(attrs)
+      val color = typedArray.getColor(0, Color.WHITE)
+
+      card.setCardBackgroundColor(color)
       card.cardElevation = Tool.dp2px(4f).toFloat()
     }
-
+//    updateAdapter(Settings.appLoader().getAllApps(context, false))
     viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
       override fun onGlobalLayout() {
         viewTreeObserver.removeOnGlobalLayoutListener(this)
         _itemWidth = width / _layoutManager!!.spanCount
         _itemHeightPadding = Tool.dp2px(20f)
-        updateAdapter(Settings.appLoader().getAllApps(context, false))
+
         Settings.appLoader().addUpdateListener(object : AppUpdateListener {
           override fun onAppUpdated(apps: List<App>): Boolean {
             updateAdapter(apps)
@@ -109,7 +115,7 @@ class AppDrawerGrid(context: Context) : FrameLayout(context) {
       val app = apps[i]
       items.add(IconLabelItem(app.icon, app.label)
         .withIconSize(context, Settings.appSettings().iconSize)
-        .withTextColor(labelColor)
+//        .withTextColor(labelColor)
         .withTextVisibility(Settings.appSettings().drawerShowLabel)
         .withIconPadding(context, 8)
         .withTextGravity(Gravity.CENTER)
