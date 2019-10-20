@@ -1,7 +1,7 @@
 package com.fisma.trinity.widgets
 
 import android.animation.Animator
-import android.appwidget.AppWidgetHostView
+import android.annotation.SuppressLint
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
@@ -16,6 +16,7 @@ import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import com.fisma.trinity.R
 import com.fisma.trinity.activity.HomeActivity
+import com.fisma.trinity.activity.HomeActivity.Companion.REQUEST_CREATE_APPWIDGET
 import com.fisma.trinity.interfaces.WidgetPickerCallback
 import com.fisma.trinity.manager.Settings
 import com.fisma.trinity.model.AppWidget
@@ -23,7 +24,6 @@ import com.fisma.trinity.util.DynamicGrid
 import com.fisma.trinity.util.Tool
 import io.codetail.animation.ViewAnimationUtils
 import io.codetail.widget.RevealFrameLayout
-import java.util.*
 import net.gsantner.opoc.util.Callback
 
 class AppWidgetPicker : RevealFrameLayout, WidgetPickerCallback {
@@ -38,10 +38,12 @@ class AppWidgetPicker : RevealFrameLayout, WidgetPickerCallback {
 
   private var currentWidgetDrop: AppWidget? = null
   private var currentDropLocation: PointF? = null
+  private var mPendingAddWidgetId: Int = -1
 
   companion object {
     const val TAG = "AppWidgetPicker"
     private var mInstance: AppWidgetPicker? = null
+    @SuppressLint("StaticFieldLeak")
     var grid: DynamicGrid? = null
 
     fun getInstance(): AppWidgetPicker? {
@@ -72,7 +74,7 @@ class AppWidgetPicker : RevealFrameLayout, WidgetPickerCallback {
 
   fun open(cx: Int, cy: Int) {
     if (isOpen) return
-    Log.d("AppWidgetPicker", "open widget picker")
+    AppWidgetResizeFrame.hideResizeFrame()
     isOpen = true
 
     widgetPickerAnimationTime = Settings.appSettings().animationSpeed * 10
@@ -161,7 +163,10 @@ class AppWidgetPicker : RevealFrameLayout, WidgetPickerCallback {
   override fun onWidgetBinded(launcher: HomeActivity, data: Intent) {
     Log.d(TAG, "onWidgetBinded")
     if (currentDropLocation != null && currentWidgetDrop != null) {
-      val appWidgetId = data.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
+      var appWidgetId = data.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
+      // appWidgetId will be -1 if this is the activity result from configure widget
+      if (appWidgetId < 0) appWidgetId = mPendingAddWidgetId
+
       val widget = currentWidgetDrop!!
       widget.appWidgetId = appWidgetId
 
@@ -170,6 +175,7 @@ class AppWidgetPicker : RevealFrameLayout, WidgetPickerCallback {
         workspace.addItemToPage(widget, workspace.currentItem)
         currentWidgetDrop = null
         currentDropLocation = null
+        mPendingAddWidgetId = -1
       }
       onCompleteRunnable.run()
     }
@@ -177,7 +183,7 @@ class AppWidgetPicker : RevealFrameLayout, WidgetPickerCallback {
 
   override fun onCreateWidget(launcher: HomeActivity, widget: AppWidget, location: PointF) {
     Log.d(TAG, "onCreateWidget")
-    val widgetHost = HomeActivity._appWidgetHost
+    val widgetHost = HomeActivity._WidgetHost
     val mAppWidgetManager = HomeActivity.mAppWidgetManager
     var appWidgetId = 0
     val options = getDefaultOptionsForWidget(widget)
@@ -202,9 +208,17 @@ class AppWidgetPicker : RevealFrameLayout, WidgetPickerCallback {
       currentDropLocation = location
       // if user already grant permission to bind widget, we immediately create the view and add it to workspace
       if (appWidgetBounded) {
-        Log.d(TAG, "inflating appwidget view")
-        widget.appWidgetId = appWidgetId
-        workspace.addItemToPage(widget, workspace.currentItem)
+        if (widget.widgetInfo?.configure == null) {
+          Log.d(TAG, "inflating appwidget view")
+          widget.appWidgetId = appWidgetId
+          workspace.addItemToPage(widget, workspace.currentItem)
+        } else {
+          mPendingAddWidgetId = appWidgetId
+          currentWidgetDrop = widget
+          // Launch over to configure widget, if needed
+          mAppWidgetManager.startConfigActivity(widget.widgetInfo!!, appWidgetId, HomeActivity.launcher,
+            widgetHost, REQUEST_CREATE_APPWIDGET)
+        }
       } else {
         Log.d(TAG, "Request appwidget binding")
         currentWidgetDrop = widget
