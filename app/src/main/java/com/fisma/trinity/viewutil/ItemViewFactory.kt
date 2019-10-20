@@ -10,10 +10,9 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.Toast
 import com.fisma.trinity.R
+import com.fisma.trinity.TrinityApplication
 import com.fisma.trinity.activity.HomeActivity
-import com.fisma.trinity.compat.AppWidgetManagerCompat
 import com.fisma.trinity.manager.Settings
-import com.fisma.trinity.model.AppWidget
 import com.fisma.trinity.model.Item
 import com.fisma.trinity.util.DragAction
 import com.fisma.trinity.util.DragHandler
@@ -81,15 +80,13 @@ object ItemViewFactory {
   }
 
   fun getWidgetView(context: Context, callback: WorkspaceCallback?, type: DragAction.Action, item: Item): View? {
-    if (HomeActivity._appWidgetHost == null) return null
-    val widgetHost = HomeActivity._appWidgetHost
-    val info = AppWidgetManagerCompat.getInstance(context).getAppWidgetInfo(item.widgetValue)
-    val widgetView = widgetHost.createView(context, item.widgetValue, info)
+    if (HomeActivity._WidgetHost == null) return null
+    val widgetHost = HomeActivity._WidgetHost
+    val info = HomeActivity.mAppWidgetManager.getAppWidgetInfo(item.widgetValue)
+    val widgetView = widgetHost.createView(TrinityApplication.get(), item.widgetValue, info)
     widgetView.setAppWidget(item.widgetValue, info)
     widgetView.visibility = View.VISIBLE
-    widgetView!!.post {
-      updateWidgetOption(item)
-    }
+
 
     val widgetContainer = LayoutInflater.from(context).inflate(R.layout.view_widget_container, null) as FrameLayout
     widgetContainer.addView(widgetView)
@@ -97,14 +94,16 @@ object ItemViewFactory {
     // TODO move this to standard DragHandler.getLongClick() method
     // needs to be set on widgetView but use widgetContainer inside
     widgetView.setOnLongClickListener(View.OnLongClickListener { view ->
-      AppWidgetResizeFrame.hideResizeFrame()
-      if (Settings.appSettings().desktopLock) {
-        return@OnLongClickListener false
+      if (!Workspace.isInEditMode()) {
+        AppWidgetResizeFrame.hideResizeFrame()
+        if (Settings.appSettings().desktopLock) {
+          return@OnLongClickListener false
+        }
+        if (Settings.appSettings().gestureFeedback) {
+          Tool.vibrate(view)
+        }
+        DragHandler.startDrag(widgetContainer, item, DragAction.Action.DESKTOP, callback)
       }
-      if (Settings.appSettings().gestureFeedback) {
-        Tool.vibrate(view)
-      }
-      DragHandler.startDrag(widgetContainer, item, DragAction.Action.DESKTOP, callback)
       true
     })
 
