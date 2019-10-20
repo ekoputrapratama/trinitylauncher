@@ -11,6 +11,7 @@ class ShortcutItem {
   var className: String? = null
   var label: String? = null
   var icon: Bitmap? = null
+  var iconTheme: Bitmap? = null
   var type: Type = Type.APP
   var action: LauncherAction.Action? = null
   var index: Int = 0
@@ -24,6 +25,23 @@ class ShortcutItem {
   fun setIcon(drawable: Drawable) {
     icon = Bitmap.createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
     ImageUtil.renderDrawableToBitmap(drawable, icon, 0, 0, drawable.intrinsicWidth, drawable.intrinsicHeight)
+  }
+
+  override fun equals(other: Any?): Boolean {
+    return other is ShortcutItem && other.hashCode() != hashCode()
+  }
+
+  override fun hashCode(): Int {
+    var result = packageName?.hashCode() ?: 0
+    result = 31 * result + (className?.hashCode() ?: 0)
+    result = 31 * result + (label?.hashCode() ?: 0)
+    result = 31 * result + (icon?.hashCode() ?: 0)
+    result = 31 * result + (iconTheme?.hashCode() ?: 0)
+    result = 31 * result + type.hashCode()
+    result = 31 * result + (action?.hashCode() ?: 0)
+    result = 31 * result + index
+    result = 31 * result + id
+    return result
   }
 
   class Builder {
