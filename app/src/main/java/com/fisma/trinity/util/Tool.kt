@@ -1,6 +1,5 @@
 package com.fisma.trinity.util
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.ActivityNotFoundException
@@ -11,39 +10,45 @@ import android.content.pm.ResolveInfo
 import android.content.res.Resources
 import android.graphics.Point
 import android.graphics.drawable.Drawable
-import android.hardware.Camera
-import android.hardware.camera2.CameraManager
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.provider.Settings
 import android.util.DisplayMetrics
 import android.util.Log
-import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.View
 import android.view.inputmethod.InputMethodManager
-import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import com.fisma.trinity.Constants
 import com.fisma.trinity.R
-import com.fisma.trinity.TrinityApplication
 import com.fisma.trinity.activity.HomeActivity
 import com.fisma.trinity.model.App
+import java.util.concurrent.Executor
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import kotlin.math.ceil
 
 class Tool {
   companion object {
+    private val CPU_COUNT = Runtime.getRuntime().availableProcessors()
+    private val CORE_POOL_SIZE = CPU_COUNT + 1
+    private val MAXIMUM_POOL_SIZE = CPU_COUNT * 2 + 1
+    private val KEEP_ALIVE = 1
+    /**
+     * An [Executor] to be used with async task with no limit on the queue size.
+     */
+    val THREAD_POOL_EXECUTOR: Executor = ThreadPoolExecutor(
+      CORE_POOL_SIZE, MAXIMUM_POOL_SIZE, KEEP_ALIVE.toLong(),
+      TimeUnit.SECONDS, LinkedBlockingQueue())
+
     fun hideKeyboard(context: Context, view: View) {
       val inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        ?: return
       inputMethodManager.hideSoftInputFromWindow(view.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
     }
 
     fun showKeyboard(context: Context, view: View) {
       val inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        ?: return
       inputMethodManager.toggleSoftInputFromWindow(view.windowToken, InputMethodManager.SHOW_IMPLICIT, InputMethodManager.HIDE_NOT_ALWAYS)
     }
 
@@ -207,12 +212,10 @@ class Tool {
     fun getDefaultAppInfo(packageManager: PackageManager, category: Constants.AppCategory): ResolveInfo? {
       val intent = IntentUtil.getDefaultAppIntent(category)
       val activitiesInfo = packageManager.queryIntentActivities(intent, 0)
-      Log.d("getDefaultAppInfo", "${activitiesInfo.size} activities for category ${category.toString()}")
+      Log.d("getDefaultAppInfo", "${activitiesInfo.size} activities for category $category")
 
       return if (activitiesInfo.size > 0) {
-        Log.d("getDefaultAppInfo", "icon for ${category.toString()} = ${activitiesInfo[0].iconResource}")
-//        activitiesInfo[0].resolvePackageName
-//        packageManager.getApplicationInfo(activitiesInfo[0].resolvePackageName, 0)
+        Log.d("getDefaultAppInfo", "icon for $category = ${activitiesInfo[0].iconResource}")
         activitiesInfo[0]
       } else null
     }
