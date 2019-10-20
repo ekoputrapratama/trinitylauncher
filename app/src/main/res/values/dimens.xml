@@ -1,19 +1,27 @@
 <resources>
-    <dimen name="default_margin_0_5">4dp</dimen>
-    <dimen name="default_margin_1">8dp</dimen>
-    <dimen name="default_margin_2">16dp</dimen>
+  <dimen name="margin_tiny">4dp</dimen>
+  <dimen name="margin_small">8dp</dimen>
+  <dimen name="margin_medium">16dp</dimen>
+  <dimen name="margin_large">32dp</dimen>
+  <dimen name="margin_huge">64dp</dimen>
 
-    <dimen name="activity_margin">@dimen/default_margin_2</dimen>
-    <dimen name="fab_margin">16dp</dimen>
+  <dimen name="slice_elevation">@dimen/margin_tiny</dimen>
 
-    <!-- Sizes for managed profile badges -->
-    <dimen name="profile_badge_size">24dp</dimen>
-    <dimen name="profile_badge_margin">4dp</dimen>
+  <dimen name="default_margin_0_5">4dp</dimen>
+  <dimen name="default_margin_1">8dp</dimen>
+  <dimen name="default_margin_2">16dp</dimen>
 
-    <!-- Padding applied to AppWidget previews -->
-    <dimen name="app_widget_preview_padding_left">16dp</dimen>
-    <dimen name="app_widget_preview_padding_right">16dp</dimen>
-    <dimen name="app_widget_preview_padding_top">32dp</dimen>
-    <dimen name="app_widget_preview_label_vertical_padding">8dp</dimen>
-    <dimen name="app_widget_preview_label_horizontal_padding">8dp</dimen>
+  <dimen name="activity_margin">@dimen/default_margin_2</dimen>
+  <dimen name="fab_margin">16dp</dimen>
+
+  <!-- Sizes for managed profile badges -->
+  <dimen name="profile_badge_size">24dp</dimen>
+  <dimen name="profile_badge_margin">4dp</dimen>
+
+  <!-- Padding applied to AppWidget previews -->
+  <dimen name="app_widget_preview_padding_left">16dp</dimen>
+  <dimen name="app_widget_preview_padding_right">16dp</dimen>
+  <dimen name="app_widget_preview_padding_top">32dp</dimen>
+  <dimen name="app_widget_preview_label_vertical_padding">8dp</dimen>
+  <dimen name="app_widget_preview_label_horizontal_padding">8dp</dimen>
 </resources>
