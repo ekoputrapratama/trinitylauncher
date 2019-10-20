@@ -1,1 +1,1 @@
-include ':app', ':materialscrollbar'
+include ':app', ':materialscrollbar', ':samples:plugin'
