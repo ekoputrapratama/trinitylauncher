@@ -1,35 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:orientation="vertical">
 
+  <io.codetail.widget.RevealFrameLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <androidx.cardview.widget.CardView
-        android:id="@+id/drawer_card"
+      android:id="@+id/drawer_card"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:layout_centerInParent="true"
+      android:layout_gravity="center"
+      android:layout_margin="14dp"
+      app:cardBackgroundColor="@color/white"
+      app:cardElevation="4dp"
+      app:cardPreventCornerOverlap="false"
+      app:cardUseCompatPadding="true">
+
+      <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_gravity="center"
-        android:layout_margin="14dp"
-        android:layout_centerInParent="true"
-        app:cardBackgroundColor="@color/white"
-        app:cardElevation="4dp">
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scrollbars="vertical"
-            android:scrollbarThumbVertical="@android:color/darker_gray"
-            android:scrollbarSize="5dp"/>
+        android:scrollbarSize="5dp"
+        android:scrollbarThumbVertical="@android:color/darker_gray"
+        android:scrollbars="vertical" />
 
     </androidx.cardview.widget.CardView>
-    <com.turingtechnologies.materialscrollbar.DragScrollBar
-        android:id="@+id/scroll_bar"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        app:msb_lightOnTouch="false"
-        app:msb_recyclerView="@id/recycler_view" />
+  </io.codetail.widget.RevealFrameLayout>
+
+  <com.turingtechnologies.materialscrollbar.DragScrollBar
+    android:id="@+id/scroll_bar"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    android:layout_alignParentTop="true"
+    android:layout_alignParentEnd="true"
+    app:msb_lightOnTouch="false"
+    app:msb_recyclerView="@id/recycler_view" />
 </RelativeLayout>
