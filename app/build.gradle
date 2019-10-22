@@ -20,8 +20,10 @@ android {
     buildConfigField "String[]", "DETECTED_ANDROID_LOCALES", "${findUsedAndroidLocales()}"
     buildConfigField "String", "BUILD_DATE", "\"${getBuildDate()}\""
 //        buildConfigField "String", "GITHASH", "\"${getGitHash()}\""
-    resValue "string", "manifest_package_id", "com.fisma.trinity"
+    buildConfigField "String", "OPEN_WEATHER_API_KEY", OPEN_WEATHER_API_KEY
+    buildConfigField "String", "ACCU_WEATHER_API_KEY", ACCU_WEATHER_API_KEY
 
+    resValue "string", "manifest_package_id", "com.fisma.trinity"
     resValue 'string', 'app_name', "TrinityLauncher"
 
     vectorDrawables.useSupportLibrary = true
@@ -124,7 +126,7 @@ dependencies {
   implementation 'jp.wasabeef:recyclerview-animators:2.2.7'
   implementation 'com.afollestad.material-dialogs:core:3.1.1'
   implementation 'com.afollestad.material-dialogs:input:3.1.1'
-  implementation 'agency.tango.android:material-intro-screen:0.0.5'
+  implementation 'com.heinrichreimersoftware:material-intro:2.0.0'
   implementation 'cat.ereza:customactivityoncrash:2.2.0'
   implementation 'de.psdev.licensesdialog:licensesdialog:1.8.3'
   implementation 'in.championswimmer:SimpleFingerGestures_Android_Library:1.2'
@@ -139,7 +141,8 @@ dependencies {
 
 
   debugImplementation 'com.facebook.flipper:flipper:0.25.0'
-  debugImplementation 'com.facebook.soloader:soloader:0.5.1' // use this version until the bug fixed
+  debugImplementation 'com.facebook.soloader:soloader:0.5.1'
+  // use this version until the bug fixed
   // debugImplementation 'com.facebook.flipper:flipper-litho-plugin:0.23.4'
   // debugImplementation 'com.facebook.litho:litho-annotations:0.19.0'
 
@@ -149,6 +152,9 @@ dependencies {
   testImplementation 'org.robolectric:robolectric:4.3'
   androidTestImplementation 'androidx.test:runner:1.2.0'
   androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+  implementation "com.squareup.retrofit2:retrofit:2.3.0"
+  implementation "com.squareup.retrofit2:converter-gson:2.3.0"
+  implementation "com.google.code.gson:gson:2.8.5"
 }
 
 repositories {
