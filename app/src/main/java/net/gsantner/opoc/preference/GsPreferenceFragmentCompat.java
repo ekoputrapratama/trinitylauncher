@@ -29,7 +29,7 @@
  * Layout file:
     <?xml version="1.0" encoding="utf-8"?>
     <TextView xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@android:id/title"
+        android:id="@android:id/headerTitle"
         style="?android:attr/listSeparatorTextViewStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

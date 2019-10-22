@@ -41,7 +41,7 @@ static String getUsedAndroidLanguages() {
         android:icon="@drawable/ic_language_black_24dp"
         android:key="@string/pref_key__language"
         android:summary="@string/pref_desc__language"
-        android:title="@string/pref_title__language"/>
+        android:headerTitle="@string/pref_title__language"/>
  */
 package net.gsantner.opoc.preference;
 

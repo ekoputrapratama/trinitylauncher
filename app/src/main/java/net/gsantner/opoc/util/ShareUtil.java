@@ -135,7 +135,7 @@ public class ShareUtil {
      * Allow to choose a handling app for given intent
      *
      * @param intent      Thing to be shared
-     * @param chooserText The title text for the chooser, or null for default
+     * @param chooserText The headerTitle text for the chooser, or null for default
      */
     public void showChooser(Intent intent, String chooserText) {
         _context.startActivity(Intent.createChooser(intent,
@@ -470,7 +470,7 @@ public class ShareUtil {
      * Draft an email with given data. Unknown data can be supplied as null.
      * This will open a chooser with installed mail clients where the mail can be sent from
      *
-     * @param subject Subject (top/title) text to be prefilled in the mail
+     * @param subject Subject (top/headerTitle) text to be prefilled in the mail
      * @param body    Body (content) text to be prefilled in the mail
      * @param to      recipients to be prefilled in the mail
      */
