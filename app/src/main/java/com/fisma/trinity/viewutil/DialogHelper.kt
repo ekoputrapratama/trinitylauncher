@@ -61,12 +61,6 @@ object DialogHelper {
   }
 
   fun selectActionDialog(context: Context, callback: ItemListener) {
-//    val builder = MaterialDialog.Builder(context)
-//    builder.title(R.string.action)
-//      .items(R.array.entries__gesture_action)
-//      .itemsCallback(callback)
-//      .show()
-
     MaterialDialog(context).show {
       title(text = "Action")
       listItems(res = R.array.entries__gesture_action, selection = callback)
@@ -74,11 +68,6 @@ object DialogHelper {
   }
 
   fun selectDesktopActionDialog(context: Context, callback: ItemListener) {
-//    val builder = MaterialDialog.Builder(context)
-//    builder.title(R.string.action)
-//      .items(R.array.entries__desktop_actions)
-//      .itemsCallback(callback)
-//      .show()
     MaterialDialog(context).show {
       title(text = "Action")
       listItems(res = R.array.entries__desktop_actions, selection = callback)
@@ -86,11 +75,6 @@ object DialogHelper {
   }
 
   fun selectGestureDialog(context: Context, title: String, callback: ItemListener) {
-//    val builder = MaterialDialog.Builder(context)
-//    builder.title(title)
-//      .items(R.array.entries__gesture)
-//      .itemsCallback(callback)
-//      .show()
     MaterialDialog(context).show {
       title(text = title)
       listItems(res = R.array.entries__gesture, selection = callback)
@@ -98,11 +82,7 @@ object DialogHelper {
   }
 
   fun selectAppDialog(context: Context, onAppSelectedListener: OnAppSelectedListener?) {
-//    val builder = MaterialDialog.Builder(context)
     val fastItemAdapter = FastItemAdapter<IconLabelItem>()
-//    builder.title(R.string.select_app)
-//      .adapter(fastItemAdapter, LinearLayoutManager(context, RecyclerView.VERTICAL, false))
-//      .negativeText(android.R.string.cancel)
 
     var dialog: MaterialDialog? = null
     val items = ArrayList<IconLabelItem>()
