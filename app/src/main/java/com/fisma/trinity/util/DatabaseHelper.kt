@@ -402,7 +402,9 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
     itemValues.put(COLUMN_LABEL, plugin._label)
     itemValues.put(COLUMN_URI, plugin._uri.toString())
     itemValues.put(COLUMN_PACKAGE_NAME, plugin._packageName)
+    itemValues.put(COLUMN_CLASS_NAME, plugin._className)
     itemValues.put(COLUMN_ENABLED, if (plugin._enabled) 1 else 0)
+
     if (plugin._icon != null) {
       val stream = ByteArrayOutputStream()
       plugin._icon!!.compress(CompressFormat.PNG, 0, stream)
@@ -428,6 +430,7 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
     itemValues.put(COLUMN_LABEL, plugin._label)
     itemValues.put(COLUMN_URI, plugin._uri.toString())
     itemValues.put(COLUMN_PACKAGE_NAME, plugin._packageName)
+    itemValues.put(COLUMN_CLASS_NAME, plugin._className)
     itemValues.put(COLUMN_ENABLED, if (plugin._enabled) 1 else 0)
 
     if (plugin._icon != null) {
@@ -448,12 +451,14 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
     val label = cursor.getString(cursor.getColumnIndex(COLUMN_LABEL))
     val imgBlob = cursor.getBlob(cursor.getColumnIndex(COLUMN_ICON))
     val packageName = cursor.getString(cursor.getColumnIndex(COLUMN_PACKAGE_NAME))
+    val className = cursor.getString(cursor.getColumnIndex(COLUMN_CLASS_NAME))
     val uri = cursor.getString(cursor.getColumnIndex(COLUMN_URI))
     val enabledInt = Integer.parseInt(cursor.getString(cursor.getColumnIndex(COLUMN_ENABLED)))
     return Plugin().build {
       id(id)
       label(label)
       packageName(packageName)
+      className(className)
       uri(uri)
 
       if (enabledInt == 1) {
@@ -463,6 +468,21 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
       }
       if (imgBlob != null) {
         icon(BitmapFactory.decodeByteArray(imgBlob, 0, imgBlob.size))
+      }
+    }
+  }
+
+  fun deleteTable(tableName: String) {
+    _db.execSQL(SQL_DELETE + tableName)
+  }
+
+  fun createTable(tableName: String) {
+    when (tableName) {
+      TABLE_PLUGIN -> {
+        _db.execSQL(SQL_CREATE_PLUGIN)
+      }
+      TABLE_SHORTCUTS -> {
+        _db.execSQL(SQL_CREATE_SHORTCUTS)
       }
     }
   }
@@ -515,6 +535,7 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
       "$COLUMN_ENABLED INTEGER," +
       "$COLUMN_ICON BLOB," +
       "$COLUMN_PACKAGE_NAME VARCHAR," +
+      "$COLUMN_CLASS_NAME VARCHAR," +
       "$COLUMN_URI VARCHAR)"
 
     const val SQL_DELETE = "DROP TABLE IF EXISTS "
