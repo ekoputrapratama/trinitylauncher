@@ -10,11 +10,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.app.AppCompatActivity
 import com.fisma.trinity.R
 
 
-class OnBoardActivity : AppCompatActivity() {
+class OnBoardActivity : MaterialIntroActivity() {
 
   public override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -33,37 +32,37 @@ class OnBoardActivity : AppCompatActivity() {
     val viewPager = overScrollLayout.overScrollView
     viewPager.overScrollMode = View.OVER_SCROLL_NEVER
 
-//        addSlide(OnBoardActivity.CustomSlide())
-//
-//        addSlide(SlideFragmentBuilder()
-//                .backgroundColor(R.color.materialRed)
-//                .buttonsColor(R.color.introButton)
-//                .image(R.drawable.intro_2)
-//                .title(getString(R.string.minibar))
-//                .description(getString(R.string.intro2_text))
-//                .build())
-//
-//        addSlide(SlideFragmentBuilder()
-//                .backgroundColor(R.color.materialGreen)
-//                .buttonsColor(R.color.introButton)
-//                .image(R.drawable.intro_3)
-//                .title(getString(R.string.pref_title__app_drawer))
-//                .description(getString(R.string.intro3_text))
-//                .build())
-//
-//        addSlide(SlideFragmentBuilder()
-//                .backgroundColor(R.color.materialBlue)
-//                .buttonsColor(R.color.introButton)
-//                .image(R.drawable.intro_4)
-//                .title(getString(R.string.pref_title__search_bar))
-//                .description(getString(R.string.intro4_text))
-//                .build())
+    addSlide(CustomSlide())
+
+    addSlide(SlideFragmentBuilder()
+      .backgroundColor(R.color.materialRed)
+      .buttonsColor(R.color.introButton)
+      .image(R.drawable.intro_2)
+      .title(getString(R.string.minibar))
+      .description(getString(R.string.intro2_text))
+      .build())
+
+    addSlide(SlideFragmentBuilder()
+      .backgroundColor(R.color.materialGreen)
+      .buttonsColor(R.color.introButton)
+      .image(R.drawable.intro_3)
+      .title(getString(R.string.pref_title__app_drawer))
+      .description(getString(R.string.intro3_text))
+      .build())
+
+    addSlide(SlideFragmentBuilder()
+      .backgroundColor(R.color.materialBlue)
+      .buttonsColor(R.color.introButton)
+      .image(R.drawable.intro_4)
+      .title(getString(R.string.pref_title__search_bar))
+      .description(getString(R.string.intro4_text))
+      .build())
   }
 
-//    override fun onFinish() {
-//        super.onFinish()
-//        setState()
-//    }
+  override fun onFinish() {
+    super.onFinish()
+    setState()
+  }
 
   private fun skipStart() {
     setState()
