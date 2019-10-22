@@ -52,8 +52,10 @@ class ShortcutSettings : ThemeActivity() {
 
     val adapter = ShortcutAdapter(mAddedShortcuts, this, R.layout.shortcut_item, R.id.item_layout)
     adapter.withOnClickListener { view, item, position ->
-      addAvailableShortcut(item)
-      removeAddedShortcut(item, position)
+      val removed = mAddedShortcuts.removeAt(position)
+      mAvailableShortcuts.add(removed)
+      mAvailableShortcutsAdapter!!.notifyDataSetChanged()
+      mAddedShortcutsGrid.adapter.notifyDataSetChanged()
     }
     mAddedShortcutsGrid.setAdapter(adapter, false)
     mAddedShortcutsGrid.setDragListListener(object : DragListView.DragListListener {
@@ -106,7 +108,7 @@ class ShortcutSettings : ThemeActivity() {
     TrinityPluginProvider.getInstance()?.updateShortcuts()
   }
 
-  fun initAvailableShortcuts() {
+  private fun initAvailableShortcuts() {
     mAvailableShortcuts.clear()
     val shortcuts = HashMap<String, ShortcutItem>()
     for (shortcut in mAddedShortcuts) {
@@ -190,20 +192,21 @@ class ShortcutSettings : ThemeActivity() {
       mAvailableShortcutsAdapter = AvailableShortcutAdapter()
       mAvailableShortcutsGrid.adapter = mAvailableShortcutsAdapter
       mAvailableShortcutsAdapter!!.withOnClickListener { v, item, position ->
-        if (mAddedShortcuts.size > 5) {
-          Toast.makeText(this, "", Toast.LENGTH_LONG)
+        if (mAddedShortcuts.size == 5) {
+          Toast.makeText(this, "cannot add more than 5 shortcuts", Toast.LENGTH_LONG).show()
+        } else {
+          val removed = mAvailableShortcuts.removeAt(position)
+          mAddedShortcuts.add(removed)
+          mAvailableShortcutsAdapter!!.notifyDataSetChanged()
+          mAddedShortcutsGrid.adapter.notifyDataSetChanged()
         }
-        val removed = mAvailableShortcuts.removeAt(position)
-        mAddedShortcuts.add(removed)
-        mAvailableShortcutsAdapter!!.notifyDataSetChanged()
-        mAddedShortcutsGrid.adapter.notifyDataSetChanged()
       }
     }
 
     mAvailableShortcutsAdapter!!.submitList(mAvailableShortcuts)
   }
 
-  fun updateIconForTheme(shortcut: ShortcutItem) {
+  private fun updateIconForTheme(shortcut: ShortcutItem) {
     val attrs = IntArray(1)
     attrs[0] = R.styleable.DashboardView_iconColor
 
