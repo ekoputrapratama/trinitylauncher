@@ -23,6 +23,7 @@ import com.fisma.trinity.Constants
 import com.fisma.trinity.R
 import com.fisma.trinity.activity.HomeActivity
 import com.fisma.trinity.model.App
+import java.util.*
 import java.util.concurrent.Executor
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
@@ -207,6 +208,49 @@ class Tool {
       val w = view.width
       val h = view.height
       return !(rx < x || rx > x + w || ry < y || ry > y + h)
+    }
+
+    fun isNightTime(): Boolean {
+      var start = 18
+      var end = 6
+      var hours = 24 - start + end
+
+      val cal = Calendar.getInstance()
+      cal.set(Calendar.HOUR_OF_DAY, start)
+      cal.set(Calendar.MINUTE, 0)
+      cal.set(Calendar.SECOND, 0)
+      cal.set(Calendar.MILLISECOND, 0)
+
+      val startHourMilli = cal.timeInMillis
+//    Log.e(cal.getTime())
+
+      cal.add(Calendar.HOUR_OF_DAY, hours)
+      val endHourMilli = cal.timeInMillis
+
+      val currentMilli = Calendar.getInstance().timeInMillis
+
+      return currentMilli in startHourMilli..endHourMilli
+    }
+
+    fun isDayTime(): Boolean {
+      val start = 6
+      val end = 18
+      val hours = 24 - start + end
+
+      val cal = Calendar.getInstance()
+      cal.set(Calendar.HOUR_OF_DAY, start)
+      cal.set(Calendar.MINUTE, 0)
+      cal.set(Calendar.SECOND, 0)
+      cal.set(Calendar.MILLISECOND, 0)
+
+      val startHourMilli = cal.timeInMillis
+
+      cal.add(Calendar.HOUR_OF_DAY, hours)
+      val endHourMilli = cal.timeInMillis
+
+      val currentMilli = Calendar.getInstance().timeInMillis
+
+      return currentMilli in startHourMilli..endHourMilli
     }
 
     fun getDefaultAppInfo(packageManager: PackageManager, category: Constants.AppCategory): ResolveInfo? {
