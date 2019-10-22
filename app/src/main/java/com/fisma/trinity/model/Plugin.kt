@@ -9,6 +9,8 @@ import java.util.*
 class Plugin {
   var _packageName: String? = null
     private set
+  var _className: String? = null
+    private set
   var _label: String? = null
     private set
   var _enabled: Boolean = true
@@ -28,12 +30,12 @@ class Plugin {
   }
 
   fun uri(uri: String): Plugin {
-    this._uri = Uri.parse(uri)
+    _uri = Uri.parse(uri)
     return this
   }
 
   fun uri(uri: Uri): Plugin {
-    this._uri = uri
+    _uri = uri
     return this
   }
 
@@ -48,17 +50,21 @@ class Plugin {
   }
 
   fun packageName(text: String?): Plugin {
-    this._packageName = text
+    _packageName = text
     return this
   }
 
+  fun className(className: String) {
+    _className = className
+  }
+
   fun label(text: String?): Plugin {
-    this._label = text
+    _label = text
     return this
   }
 
   fun enabled(enabled: Boolean): Plugin {
-    this._enabled = enabled
+    _enabled = enabled
     return this
   }
 
