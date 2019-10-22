@@ -29,7 +29,6 @@
   <uses-permission android:name="android.permission.CAMERA" />
   <uses-permission android:name="android.permission.FLASHLIGHT" />
   <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-
   <uses-permission
     android:name="android.permission.WRITE_SECURE_SETTINGS"
     tools:ignore="ProtectedPermissions" />
@@ -53,18 +52,12 @@
     android:theme="@style/Home.Light"
     tools:ignore="GoogleAppIndexingWarning"
     tools:replace="android:allowBackup">
-    <meta-data
-      android:name="com.google.android.actions"
-      android:resource="@xml/actions" />
-    <meta-data
-      android:name="android.max_aspect"
-      android:value="2.1" />
 
     <activity
       android:name=".activity.OnBoardActivity"
       android:clearTaskOnLaunch="true"
       android:label="@string/app_name"
-      android:theme="@style/IntroTheme">
+      android:theme="@style/Theme.Intro">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
 
@@ -125,7 +118,6 @@
       android:name="com.facebook.flipper.android.diagnostics.FlipperDiagnosticActivity"
       android:exported="true" />
 
-
     <receiver
       android:name=".receivers.DeviceAdminReceiver"
       android:permission="android.permission.BIND_DEVICE_ADMIN">
@@ -164,6 +156,7 @@
     </provider>
 
     <receiver android:name=".receivers.SliceActionsBroadcastReceiver" />
+
     <activity android:name=".activity.ShortcutSettings">
       <meta-data
         android:name="android.metadata.SLICE_URI"
@@ -171,9 +164,9 @@
 
       <intent-filter>
         <action android:name="android.intent.action.VIEW" />
+
         <category android:name="com.fisma.trinity.PLUGIN" />
       </intent-filter>
-
       <intent-filter android:autoVerify="true">
         <action android:name="android.intent.action.VIEW" />
 
@@ -187,11 +180,37 @@
           android:scheme="@string/scheme_slice_url" />
       </intent-filter>
     </activity>
+
+    <activity
+      android:name=".activity.WeatherSettings"
+      android:label="@string/title_activity_weather_settings">
+      <meta-data
+        android:name="android.metadata.SLICE_URI"
+        android:value="@string/weather_slice_uri" />
+
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+
+        <category android:name="com.fisma.trinity.PLUGIN" />
+      </intent-filter>
+      <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW" />
+
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <category android:name="com.fisma.trinity.PLUGIN" />
+
+        <data
+          android:host="@string/host_slice_url"
+          android:pathPrefix="@string/weather_slice_path"
+          android:scheme="@string/scheme_slice_url" />
+      </intent-filter>
+    </activity>
+
     <provider
       android:name=".TrinityPluginProvider"
       android:authorities="com.fisma.trinity"
       android:exported="true">
-
       <intent-filter>
         <action android:name="android.intent.action.VIEW" />
         <action android:name="androidx.intent.SLICE_ACTION" />
