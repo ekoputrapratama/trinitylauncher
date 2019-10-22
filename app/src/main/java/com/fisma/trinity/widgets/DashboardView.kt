@@ -26,6 +26,11 @@ class DashboardView : RecyclerView {
     PluginManager.initViews(this)
   }
 
+  fun setPluginList(plugins: ArrayList<Plugin>) {
+    mPluginList = plugins
+    mAdapter!!.submitList(plugins)
+  }
+
   fun addPlugin(plugin: Plugin) {
     mPluginList.add(plugin)
     mAdapter!!.submitList(mPluginList)
@@ -36,8 +41,8 @@ class DashboardView : RecyclerView {
     mAdapter!!.submitList(mPluginList)
   }
 
-  fun removePlugin(label: String) {
-
+  fun removePlugin(packageName: String, className: String) {
+    mPluginList = mPluginList.filter { p -> p._packageName != packageName && p._className != className } as ArrayList<Plugin>
     mAdapter!!.submitList(mPluginList)
   }
 
