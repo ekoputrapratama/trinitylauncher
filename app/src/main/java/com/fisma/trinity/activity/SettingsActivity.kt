@@ -2,6 +2,7 @@ package com.fisma.trinity.activity
 
 import android.app.Activity
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.widget.Toolbar
 import com.fisma.trinity.Constants
@@ -19,9 +20,9 @@ class SettingsActivity : ThemeActivity() {
 
   private var prefFrag: SettingsMasterFragment? = null
 
-  override fun onCreate(b: Bundle?) {
+  override fun onCreate(savedInstanceState: Bundle?) {
     // must be applied before setContentView
-    super.onCreate(b)
+    super.onCreate(savedInstanceState)
     val contextUtils = ContextUtils(this)
     contextUtils.setAppLanguage(_appSettings!!.language)
 
@@ -30,8 +31,11 @@ class SettingsActivity : ThemeActivity() {
     toolbar = findViewById(R.id.toolbar)
     toolbar!!.setTitle(R.string.pref_title__settings)
     setSupportActionBar(toolbar)
-    toolbar!!.navigationIcon = resources.getDrawable(R.drawable.ic_arrow_back_white_24px)
-    toolbar!!.setNavigationOnClickListener { v -> onBackPressed() }
+    toolbar!!.navigationIcon = if (Build.VERSION.SDK_INT >= 21) {
+      resources.getDrawable(R.drawable.ic_arrow_back_white_24px, theme)
+    } else resources.getDrawable(R.drawable.ic_arrow_back_white_24px)
+
+    toolbar!!.setNavigationOnClickListener { onBackPressed() }
 
     prefFrag = SettingsMasterFragment()
     val transaction = supportFragmentManager.beginTransaction()
@@ -49,7 +53,7 @@ class SettingsActivity : ThemeActivity() {
     if (resultCode == Activity.RESULT_OK) {
       val files = Utils.getSelectedFilesFromResult(data!!)
       when (requestCode) {
-        Constants.INTENT_BACKUP -> BackupHelper.backupConfig(this, File(Utils.getFileForUri(files[0]).absolutePath + "/openlauncher.zip").toString())
+        Constants.INTENT_BACKUP -> BackupHelper.backupConfig(this, File(Utils.getFileForUri(files[0]).absolutePath + "/trinitylauncher.zip").toString())
         Constants.INTENT_RESTORE -> {
           BackupHelper.restoreConfig(this, Utils.getFileForUri(files[0]).toString())
           exitProcess(0)
