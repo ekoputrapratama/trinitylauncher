@@ -12,8 +12,8 @@ import android.widget.Toast
 import com.fisma.trinity.R
 import com.fisma.trinity.TrinityPluginProvider
 import com.fisma.trinity.activity.ShortcutSettings
+import com.fisma.trinity.activity.WeatherSettings
 import com.fisma.trinity.util.LauncherAction
-import com.fisma.trinity.util.buildUriWithAuthority
 
 class SliceActionsBroadcastReceiver : BroadcastReceiver() {
 
@@ -26,6 +26,10 @@ class SliceActionsBroadcastReceiver : BroadcastReceiver() {
           "no message"
         )
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+      }
+      TrinityPluginProvider.ACTION_WEATHER_SETTINGS -> {
+        val intent = Intent(context, WeatherSettings::class.java)
+        context?.startActivity(intent)
       }
       TrinityPluginProvider.ACTION_SHORTCUTS_SETTINGS -> {
         val intent = Intent(context, ShortcutSettings::class.java)
