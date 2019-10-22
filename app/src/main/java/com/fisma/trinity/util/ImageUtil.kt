@@ -52,7 +52,6 @@ class ImageUtil {
 
       canvas.drawBitmap(bitmap, left.toFloat(), top.toFloat(), null)
       canvas.setBitmap(null)
-      result.recycle()
       return result
     }
 
