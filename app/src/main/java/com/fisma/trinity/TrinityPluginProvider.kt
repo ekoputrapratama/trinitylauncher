@@ -17,6 +17,7 @@ import com.fisma.trinity.activity.HomeActivity
 import com.fisma.trinity.interfaces.SliceBuilder
 import com.fisma.trinity.model.ShortcutItem
 import com.fisma.trinity.slicebuilders.ShortcutsSliceBuilder
+import com.fisma.trinity.slicebuilders.WeatherSliceBuilder
 import com.fisma.trinity.util.*
 
 
@@ -28,6 +29,7 @@ class TrinityPluginProvider : SliceProvider() {
   private lateinit var hostNameUrl: String
 
   private lateinit var shortcutsPath: String
+  private lateinit var weatherPath: String
   private lateinit var shortcutsData: ArrayList<ShortcutItem>
   private lateinit var db: DatabaseHelper
 
@@ -46,6 +48,7 @@ class TrinityPluginProvider : SliceProvider() {
     hostNameUrl = contextNonNull.resources.getString(R.string.host_slice_url)
 
     shortcutsPath = contextNonNull.resources.getString(R.string.shortcuts_slice_path)
+    weatherPath = contextNonNull.resources.getString(R.string.weather_slice_path)
 
     if (shortcutsData.size == 0) {
       initShortcuts()
@@ -85,6 +88,7 @@ class TrinityPluginProvider : SliceProvider() {
       sliceUri = sliceUri,
       shortcuts = shortcutsData
     )
+    weatherPath -> WeatherSliceBuilder(context, sliceUri)
     else -> {
       Log.e(TAG, "Unknown URI: $sliceUri")
       null
@@ -173,6 +177,7 @@ class TrinityPluginProvider : SliceProvider() {
     const val EXTRA_TOAST_MESSAGE = "com.example.androidx.extra.TOAST_MESSAGE"
     const val ACTION_TOAST_RANGE_VALUE = "com.example.androidx.slice.action.TOAST_RANGE_VALUE"
     const val ACTION_SHORTCUTS_SETTINGS = "com.fisma.trinity.action.SHORTCUT_SETTINGS"
+    const val ACTION_WEATHER_SETTINGS = "com.fisma.trinity.action.WEATHER_SETTINGS"
     const val ACTION_ASSIST = "com.fisma.trinity.action.ASSIST"
     const val ACTION_FLASHLIGHT = "com.fisma.trinity.action.FLASHLIGHT"
     const val ACTION_BLUETOOTH = "com.fisma.trinity.action.BLUETOOTH"

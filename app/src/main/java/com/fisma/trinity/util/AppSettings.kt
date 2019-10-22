@@ -2,12 +2,12 @@ package com.fisma.trinity.util
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.graphics.Color
 import androidx.core.content.ContextCompat
 
 import com.fisma.trinity.TrinityApplication
 import com.fisma.trinity.R
+import com.fisma.trinity.api.WeatherServiceProvider
 import com.fisma.trinity.manager.Settings
 import com.fisma.trinity.widgets.AppDrawerController
 import com.fisma.trinity.widgets.PagerIndicator
@@ -233,6 +233,36 @@ class AppSettings(context: Context) : SharedPreferencesPropertyBackend(context, 
     get() = getFloat("pref_key__blur_radius", 1f)
     set(value) {
       _prefApp.edit().putFloat("pref_key__blur_radius", value).commit()
+    }
+  /**
+   * Weather Settings
+   * */
+  var weatherProvider: WeatherServiceProvider.WeatherProvider
+    get() = WeatherServiceProvider.WeatherProvider.valueOf(getString(R.string.pref_key__weather_provider, "OpenWeatherMap"))
+    set(value) {
+      _prefApp.edit().putString(context.getString(R.string.pref_key__weather_provider), value.toString()).commit()
+    }
+  var weatherCityName: String
+    get() = getString(R.string.pref_key__weather_city, "Balikpapan")
+    set(value) {
+      _prefApp.edit().putString(context.getString(R.string.pref_key__weather_city), value).commit()
+    }
+
+  var weatherLastFetch: Long
+    get() = getLong(R.string.pref_key__weather_last_fetch, 0)
+    set(value) {
+      _prefApp.edit().putLong(context.getString(R.string.pref_key__weather_last_fetch), value).commit()
+    }
+  var weatherForecastLastFetch: Long
+    get() = getLong(R.string.pref_key__weather_forecast_last_fetch, 0)
+    set(value) {
+      _prefApp.edit().putLong(context.getString(R.string.pref_key__weather_forecast_last_fetch), value).commit()
+    }
+
+  var weatherUpdateInterval: Long
+    get() = getLong(R.string.pref_key__weather_update_interval, 60000 /*1 minute*/)
+    set(value) {
+      _prefApp.edit().putLong(context.getString(R.string.pref_key__weather_update_interval), value).commit()
     }
   // MUST be committed
   var appFirstLaunch: Boolean
