@@ -6,20 +6,15 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.*
 import android.net.Uri
-import android.util.Log
-import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.slice.Slice
 import androidx.slice.builders.*
-import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat
 import com.fisma.trinity.R
 import com.fisma.trinity.TrinityPluginProvider
-import com.fisma.trinity.activity.HomeActivity
 import com.fisma.trinity.compat.TorchCompat
 import com.fisma.trinity.interfaces.SliceBuilder
 import com.fisma.trinity.model.ShortcutItem
 import com.fisma.trinity.receivers.SliceActionsBroadcastReceiver
-import com.fisma.trinity.util.ImageUtil
 import com.fisma.trinity.util.LauncherAction
 
 class ShortcutsSliceBuilder(
@@ -44,7 +39,7 @@ class ShortcutsSliceBuilder(
         R.attr.iconColor
       }
 
-      var typedArray = theme.obtainStyledAttributes(attrs)
+      val typedArray = theme.obtainStyledAttributes(attrs)
       val color = typedArray.getColor(0, Color.WHITE)
       header {
         // Second argument for title/subtitle informs system we are waiting for data to load.
@@ -66,19 +61,16 @@ class ShortcutsSliceBuilder(
         IconCompat.createWithResource(context, R.drawable.ic_settings_black_24dp).setTint(color),
         ListBuilder.ICON_IMAGE, ""
       ))
-      Log.d(TAG, "row count $rowCount")
-      Log.d(TAG, "shortcuts size ${shortcuts.size}")
+
       for (i in 0 until rowCount) {
         val startIndex = i * 5
         val endIndex = startIndex + 5
-        Log.d(TAG, "adding row $i")
         gridRow {
 
-          Log.d(TAG, "startIndex=$startIndex endIndex=$endIndex lastIndex=${shortcuts.lastIndex}")
           for (j in startIndex until endIndex) {
             if (j > shortcuts.lastIndex) break
             val shortcut: ShortcutItem = shortcuts[j]
-            Log.d(TAG, "adding cell $j")
+
             cell {
               addImage(
                 createShortcutIcon(shortcut),
@@ -151,7 +143,7 @@ class ShortcutsSliceBuilder(
   }
 
   private fun createShortcutIcon(shortcut: ShortcutItem): IconCompat {
-    var icon: IconCompat = IconCompat.createWithBitmap(shortcut.icon)
+    val icon: IconCompat = IconCompat.createWithBitmap(shortcut.icon)
     val theme = context.theme
     val attrs = IntArray(1) {
       R.attr.iconColor
@@ -186,6 +178,8 @@ class ShortcutsSliceBuilder(
       }
       LauncherAction.Action.LauncherSettings, LauncherAction.Action.SetWallpaper -> {
         icon.setTint(color)
+      }
+      else -> {
       }
     }
 
