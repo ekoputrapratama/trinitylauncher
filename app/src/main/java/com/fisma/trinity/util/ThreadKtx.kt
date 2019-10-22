@@ -1,8 +1,10 @@
 package com.fisma.trinity.util
 
+import android.os.AsyncTask
 import android.os.Handler
 import android.os.Looper
 import com.fisma.trinity.MainThreadExecutor
+import com.fisma.trinity.activity.HomeActivity
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutionException
 
@@ -27,6 +29,23 @@ fun runOnThread(handler: Handler, r: () -> Unit) {
   }
 }
 
+fun runOnUiThread(r: () -> Unit) {
+  HomeActivity.launcher.runOnUiThread(r)
+}
+
+fun runOnAsyncTask(r: () -> Unit) {
+  GeneralAsyncTask().execute(r)
+}
+
+class GeneralAsyncTask : AsyncTask<() -> Unit, Any, Any>() {
+
+  override fun doInBackground(vararg params: (() -> Unit)?): Any? {
+    params[0]!!()
+    return null
+  }
+
+}
+
 fun <T, A> ensureOnMainThread(creator: (A) -> T): (A) -> T {
   return { it ->
     if (Looper.myLooper() == Looper.getMainLooper()) {
@@ -43,3 +62,4 @@ fun <T, A> ensureOnMainThread(creator: (A) -> T): (A) -> T {
     }
   }
 }
+
