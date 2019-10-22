@@ -2,7 +2,6 @@ package com.fisma.trinity.adapter
 
 import com.fisma.trinity.model.ShortcutItem
 import com.woxthebox.draglistview.DragItemAdapter
-import android.widget.Toast
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
@@ -13,7 +12,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.fisma.trinity.activity.ShortcutSettings
-import com.fisma.trinity.model.Plugin
 import com.fisma.trinity.util.Tool
 
 
@@ -90,7 +88,9 @@ class AvailableShortcutAdapter : ListAdapter<ShortcutItem, AvailableShortcutAdap
 
   override fun onBindViewHolder(holder: ViewHolder, position: Int) {
     val item = getItem(position)
-    holder.mImage.setImageBitmap(item.icon)
+    val icon = if (item.iconTheme == null) item.icon else item.iconTheme
+
+    holder.mImage.setImageBitmap(icon)
     holder.mText.text = item.label
     holder.mView.tag = item
     holder.bind(itemClickListeners, position)
