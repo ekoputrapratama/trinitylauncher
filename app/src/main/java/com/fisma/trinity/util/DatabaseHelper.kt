@@ -6,15 +6,14 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.Log
 import com.fisma.trinity.Constants
 import com.fisma.trinity.manager.Settings
 import com.fisma.trinity.model.Item
-import android.graphics.Bitmap.CompressFormat
-import android.graphics.BitmapFactory
-import com.fisma.trinity.model.AppWidget
 import com.fisma.trinity.model.Plugin
-import com.fisma.trinity.model.ShortcutItem
+import com.fisma.trinity.model.Shortcut
 import java.io.ByteArrayOutputStream
 
 
@@ -79,15 +78,15 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
         } while (cursor.moveToNext())
       }
       cursor.close()
-      plugins.sortBy { it._label }
+      plugins.sortBy { it.label }
       return plugins
     }
 
-  val shortcuts: ArrayList<ShortcutItem>
+  val shortcuts: ArrayList<Shortcut>
     get() {
       val SQL_QUERY_SHORTCUTS = SQL_QUERY + TABLE_SHORTCUTS
       val cursor = _db.rawQuery(SQL_QUERY_SHORTCUTS, null)
-      val shortcuts = ArrayList<ShortcutItem>()
+      val shortcuts = ArrayList<Shortcut>()
       if (cursor.moveToFirst()) {
         do {
           shortcuts.add(getShortcutSelection(cursor))
@@ -294,7 +293,7 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
     return item
   }
 
-  fun createShortcut(shortcut: ShortcutItem) {
+  fun createShortcut(shortcut: Shortcut) {
     val itemValues = ContentValues()
     itemValues.put(COLUMN_TIME, shortcut.id)
     itemValues.put(COLUMN_TYPE, shortcut.type.toString())
@@ -302,16 +301,14 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
     itemValues.put(COLUMN_INDEX, shortcut.index)
 
     if (shortcut.icon != null) {
-      val stream = ByteArrayOutputStream()
-      shortcut.icon!!.compress(CompressFormat.PNG, 0, stream)
-      itemValues.put(COLUMN_ICON, stream.toByteArray())
+      itemValues.put(COLUMN_ICON, shortcut.getIconBlob())
     }
 
     when (shortcut.type) {
-      ShortcutItem.Type.ACTION -> {
+      Shortcut.Type.ACTION -> {
         itemValues.put(COLUMN_ACTION, shortcut.action.toString())
       }
-      ShortcutItem.Type.APP -> {
+      Shortcut.Type.APP -> {
         itemValues.put(COLUMN_PACKAGE_NAME, shortcut.packageName)
         itemValues.put(COLUMN_CLASS_NAME, shortcut.className)
       }
@@ -320,7 +317,7 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
     _db.insert(TABLE_SHORTCUTS, null, itemValues)
   }
 
-  fun updateShortcut(shortcut: ShortcutItem) {
+  fun updateShortcut(shortcut: Shortcut) {
     val itemValues = ContentValues()
     itemValues.put(COLUMN_LABEL, shortcut.label)
     itemValues.put(COLUMN_TYPE, shortcut.type.toString())
@@ -328,16 +325,14 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
     itemValues.put(COLUMN_INDEX, shortcut.index)
 
     if (shortcut.icon != null) {
-      val stream = ByteArrayOutputStream()
-      shortcut.icon!!.compress(CompressFormat.PNG, 0, stream)
-      itemValues.put(COLUMN_ICON, stream.toByteArray())
+      itemValues.put(COLUMN_ICON, shortcut.getIconBlob())
     }
 
     when (shortcut.type) {
-      ShortcutItem.Type.ACTION -> {
+      Shortcut.Type.ACTION -> {
         itemValues.put(COLUMN_ACTION, shortcut.action.toString())
       }
-      ShortcutItem.Type.APP -> {
+      Shortcut.Type.APP -> {
         itemValues.put(COLUMN_PACKAGE_NAME, shortcut.packageName)
         itemValues.put(COLUMN_CLASS_NAME, shortcut.className)
       }
@@ -346,11 +341,11 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
     _db.update(TABLE_SHORTCUTS, itemValues, COLUMN_TIME + " = " + shortcut.id, null)
   }
 
-  fun deleteShortcut(shortcut: ShortcutItem) {
+  fun deleteShortcut(shortcut: Shortcut) {
     _db.delete(TABLE_SHORTCUTS, "$COLUMN_TIME = ?", arrayOf<String>(shortcut.id.toString()))
   }
 
-  fun saveShortcut(item: ShortcutItem) {
+  fun saveShortcut(item: Shortcut) {
     val SQL_QUERY_SPECIFIC = SQL_QUERY + TABLE_SHORTCUTS + " WHERE " + COLUMN_TIME + " = " + item.id
     val cursor = _db.rawQuery(SQL_QUERY_SPECIFIC, null)
     if (cursor.count == 0) {
@@ -362,30 +357,27 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
       cursor.close()
   }
 
-  fun getShortcutSelection(cursor: Cursor): ShortcutItem {
+  fun getShortcutSelection(cursor: Cursor): Shortcut {
     val id = Integer.parseInt(cursor.getString(cursor.getColumnIndex(COLUMN_TIME)))
     val label = cursor.getString(cursor.getColumnIndex(COLUMN_LABEL))
     val imgBlob = cursor.getBlob(cursor.getColumnIndex(COLUMN_ICON))
-    val type = ShortcutItem.Type.valueOf(cursor.getString(cursor.getColumnIndex(COLUMN_TYPE)))
+    val type = Shortcut.Type.valueOf(cursor.getString(cursor.getColumnIndex(COLUMN_TYPE)))
     val index = Integer.parseInt(cursor.getString(cursor.getColumnIndex(COLUMN_INDEX)))
 
-    val builder = ShortcutItem.Builder()
+    val builder = Shortcut.Builder()
       .setId(id)
       .setIndex(index)
       .setLabel(label)
       .setType(type)
+      .setIcon(imgBlob)
 
-
-    if (imgBlob != null) {
-      builder.setIcon(BitmapFactory.decodeByteArray(imgBlob, 0, imgBlob.size))
-    }
     when (type) {
-      ShortcutItem.Type.ACTION -> {
+      Shortcut.Type.ACTION -> {
         val actionStr = cursor.getString(cursor.getColumnIndex(COLUMN_ACTION))
         val action = LauncherAction.Action.valueOf(actionStr)
         builder.setAction(action)
       }
-      ShortcutItem.Type.APP -> {
+      Shortcut.Type.APP -> {
         val packageName = cursor.getString(cursor.getColumnIndex(COLUMN_PACKAGE_NAME))
         val className = cursor.getString(cursor.getColumnIndex(COLUMN_CLASS_NAME))
         builder.setClassName(className)
@@ -398,23 +390,21 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
 
   fun createPlugin(plugin: Plugin) {
     val itemValues = ContentValues()
-    itemValues.put(COLUMN_TIME, plugin._id)
-    itemValues.put(COLUMN_LABEL, plugin._label)
-    itemValues.put(COLUMN_URI, plugin._uri.toString())
-    itemValues.put(COLUMN_PACKAGE_NAME, plugin._packageName)
-    itemValues.put(COLUMN_CLASS_NAME, plugin._className)
-    itemValues.put(COLUMN_ENABLED, if (plugin._enabled) 1 else 0)
+    itemValues.put(COLUMN_TIME, plugin.id)
+    itemValues.put(COLUMN_LABEL, plugin.label)
+    itemValues.put(COLUMN_URI, plugin.uri.toString())
+    itemValues.put(COLUMN_PACKAGE_NAME, plugin.packageName)
+    itemValues.put(COLUMN_CLASS_NAME, plugin.className)
+    itemValues.put(COLUMN_ENABLED, if (plugin.enabled) 1 else 0)
 
-    if (plugin._icon != null) {
-      val stream = ByteArrayOutputStream()
-      plugin._icon!!.compress(CompressFormat.PNG, 0, stream)
-      itemValues.put(COLUMN_ICON, stream.toByteArray())
+    if (plugin.icon != null) {
+      itemValues.put(COLUMN_ICON, plugin.getIconBlob())
     }
     _db.insert(TABLE_PLUGIN, null, itemValues)
   }
 
   fun savePlugin(plugin: Plugin) {
-    val SQL_QUERY_SPECIFIC = SQL_QUERY + TABLE_PLUGIN + " WHERE " + COLUMN_TIME + " = " + plugin._id
+    val SQL_QUERY_SPECIFIC = SQL_QUERY + TABLE_PLUGIN + " WHERE " + COLUMN_TIME + " = " + plugin.id
     val cursor = _db.rawQuery(SQL_QUERY_SPECIFIC, null)
     if (cursor.count == 0) {
       createPlugin(plugin)
@@ -427,23 +417,23 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
 
   fun updatePlugin(plugin: Plugin) {
     val itemValues = ContentValues()
-    itemValues.put(COLUMN_LABEL, plugin._label)
-    itemValues.put(COLUMN_URI, plugin._uri.toString())
-    itemValues.put(COLUMN_PACKAGE_NAME, plugin._packageName)
-    itemValues.put(COLUMN_CLASS_NAME, plugin._className)
-    itemValues.put(COLUMN_ENABLED, if (plugin._enabled) 1 else 0)
+    itemValues.put(COLUMN_LABEL, plugin.label)
+    itemValues.put(COLUMN_URI, plugin.uri.toString())
+    itemValues.put(COLUMN_PACKAGE_NAME, plugin.packageName)
+    itemValues.put(COLUMN_CLASS_NAME, plugin.className)
+    itemValues.put(COLUMN_ENABLED, if (plugin.enabled) 1 else 0)
 
-    if (plugin._icon != null) {
+    if (plugin.icon != null) {
       val stream = ByteArrayOutputStream()
-      plugin._icon!!.compress(CompressFormat.PNG, 0, stream)
+      plugin.icon!!.compress(Bitmap.CompressFormat.PNG, 0, stream)
       itemValues.put(COLUMN_ICON, stream.toByteArray())
     }
 
-    _db.update(TABLE_PLUGIN, itemValues, COLUMN_TIME + " = " + plugin._id, null)
+    _db.update(TABLE_PLUGIN, itemValues, COLUMN_TIME + " = " + plugin.id, null)
   }
 
   fun deletePlugin(plugin: Plugin) {
-    _db.delete(TABLE_PLUGIN, "$COLUMN_TIME = ?", arrayOf<String>(plugin._id.toString()))
+    _db.delete(TABLE_PLUGIN, "$COLUMN_TIME = ?", arrayOf<String>(plugin.id.toString()))
   }
 
   fun getPluginSelection(cursor: Cursor): Plugin {
@@ -454,22 +444,16 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
     val className = cursor.getString(cursor.getColumnIndex(COLUMN_CLASS_NAME))
     val uri = cursor.getString(cursor.getColumnIndex(COLUMN_URI))
     val enabledInt = Integer.parseInt(cursor.getString(cursor.getColumnIndex(COLUMN_ENABLED)))
-    return Plugin().build {
-      id(id)
-      label(label)
-      packageName(packageName)
-      className(className)
-      uri(uri)
 
-      if (enabledInt == 1) {
-        enabled(true)
-      } else {
-        enabled(false)
-      }
-      if (imgBlob != null) {
-        icon(BitmapFactory.decodeByteArray(imgBlob, 0, imgBlob.size))
-      }
-    }
+    return Plugin.Builder()
+      .setId(id)
+      .setLabel(label)
+      .setClassName(className)
+      .setPackageName(packageName)
+      .setUri(uri)
+      .setEnabled(enabledInt)
+      .setIcon(imgBlob)
+      .build()
   }
 
   fun deleteTable(tableName: String) {

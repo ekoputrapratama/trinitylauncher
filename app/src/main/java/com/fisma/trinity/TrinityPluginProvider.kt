@@ -7,15 +7,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Log
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.IconCompat
 import androidx.slice.Slice
 import androidx.slice.SliceProvider
-import androidx.slice.builders.*
 import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat
-import com.fisma.trinity.activity.HomeActivity
-import com.fisma.trinity.interfaces.SliceBuilder
-import com.fisma.trinity.model.ShortcutItem
+import com.fisma.trinity.model.Shortcut
 import com.fisma.trinity.slicebuilders.ShortcutsSliceBuilder
 import com.fisma.trinity.slicebuilders.WeatherSliceBuilder
 import com.fisma.trinity.util.*
@@ -30,7 +25,7 @@ class TrinityPluginProvider : SliceProvider() {
 
   private lateinit var shortcutsPath: String
   private lateinit var weatherPath: String
-  private lateinit var shortcutsData: ArrayList<ShortcutItem>
+  private lateinit var shortcutsData: ArrayList<Shortcut>
   private lateinit var db: DatabaseHelper
 
   init {
@@ -107,8 +102,8 @@ class TrinityPluginProvider : SliceProvider() {
     if (googleAssistantAvailable) {
       try {
         val icon = context.packageManager.getApplicationIcon("com.google.android.googlequicksearchbox")
-        db.saveShortcut(ShortcutItem.Builder()
-          .setType(ShortcutItem.Type.ACTION)
+        db.saveShortcut(Shortcut.Builder()
+          .setType(Shortcut.Type.ACTION)
           .setIndex(0)
           .setAction(LauncherAction.Action.Assist)
           .setIcon(icon)
@@ -121,13 +116,13 @@ class TrinityPluginProvider : SliceProvider() {
     }
 
     var drawable: VectorDrawableCompat?
-    var shortcut: ShortcutItem?
+    var shortcut: Shortcut?
     val flashlightAvailable = context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)
 
     if (flashlightAvailable) {
       drawable = VectorDrawableCompat.create(context.resources, R.drawable.ic_flashlight, context.theme)
-      shortcut = ShortcutItem.Builder()
-        .setType(ShortcutItem.Type.ACTION)
+      shortcut = Shortcut.Builder()
+        .setType(Shortcut.Type.ACTION)
         .setAction(LauncherAction.Action.Flashlight)
         .setLabel("Flashlight")
         .setIcon(ImageUtil.drawableToBitmap(drawable!!.mutate())!!)
@@ -138,8 +133,8 @@ class TrinityPluginProvider : SliceProvider() {
 
 
     drawable = VectorDrawableCompat.create(context.resources, R.drawable.ic_bluetooth, context.theme)
-    db.saveShortcut(ShortcutItem.Builder()
-      .setType(ShortcutItem.Type.ACTION)
+    db.saveShortcut(Shortcut.Builder()
+      .setType(Shortcut.Type.ACTION)
       .setAction(LauncherAction.Action.Bluetooth)
       .setIcon(ImageUtil.drawableToBitmap(drawable!!.mutate())!!)
       .setLabel("Bluetooth")
@@ -148,8 +143,8 @@ class TrinityPluginProvider : SliceProvider() {
     )
 
     drawable = VectorDrawableCompat.create(context.resources, R.drawable.ic_photo_black_24dp, context.theme)
-    db.saveShortcut(ShortcutItem.Builder()
-      .setType(ShortcutItem.Type.ACTION)
+    db.saveShortcut(Shortcut.Builder()
+      .setType(Shortcut.Type.ACTION)
       .setAction(LauncherAction.Action.SetWallpaper)
       .setIcon(ImageUtil.drawableToBitmap(drawable)!!)
       .setLabel("Wallpaper")
@@ -158,8 +153,8 @@ class TrinityPluginProvider : SliceProvider() {
     )
 
     drawable = VectorDrawableCompat.create(context.resources, R.drawable.ic_settings_launcher_black_24dp, context.theme)
-    db.saveShortcut(ShortcutItem.Builder()
-      .setType(ShortcutItem.Type.ACTION)
+    db.saveShortcut(Shortcut.Builder()
+      .setType(Shortcut.Type.ACTION)
       .setAction(LauncherAction.Action.LauncherSettings)
       .setIcon(ImageUtil.drawableToBitmap(drawable)!!)
       .setLabel("Settings")

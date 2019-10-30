@@ -13,14 +13,14 @@ import com.fisma.trinity.R
 import com.fisma.trinity.TrinityPluginProvider
 import com.fisma.trinity.compat.TorchCompat
 import com.fisma.trinity.interfaces.SliceBuilder
-import com.fisma.trinity.model.ShortcutItem
+import com.fisma.trinity.model.Shortcut
 import com.fisma.trinity.receivers.SliceActionsBroadcastReceiver
 import com.fisma.trinity.util.LauncherAction
 
 class ShortcutsSliceBuilder(
   val context: Context,
   sliceUri: Uri,
-  val shortcuts: ArrayList<ShortcutItem>
+  val shortcuts: ArrayList<Shortcut>
 ) : SliceBuilder(sliceUri) {
   companion object {
     const val TAG = "ShortcutsSliceBuilder"
@@ -69,7 +69,7 @@ class ShortcutsSliceBuilder(
 
           for (j in startIndex until endIndex) {
             if (j > shortcuts.lastIndex) break
-            val shortcut: ShortcutItem = shortcuts[j]
+            val shortcut: Shortcut = shortcuts[j]
 
             cell {
               addImage(
@@ -85,7 +85,7 @@ class ShortcutsSliceBuilder(
     }
   }
 
-  private fun createShortcutTapAction(shortcut: ShortcutItem): PendingIntent {
+  private fun createShortcutTapAction(shortcut: Shortcut): PendingIntent {
     // Ensure a new PendingIntent is created for each message.
     var requestCode = 0
     when (shortcut.action) {
@@ -142,7 +142,7 @@ class ShortcutsSliceBuilder(
     }
   }
 
-  private fun createShortcutIcon(shortcut: ShortcutItem): IconCompat {
+  private fun createShortcutIcon(shortcut: Shortcut): IconCompat {
     val icon: IconCompat = IconCompat.createWithBitmap(shortcut.icon)
     val theme = context.theme
     val attrs = IntArray(1) {

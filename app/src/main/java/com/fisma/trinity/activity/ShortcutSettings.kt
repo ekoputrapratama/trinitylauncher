@@ -16,7 +16,7 @@ import com.fisma.trinity.R
 import com.fisma.trinity.TrinityPluginProvider
 import com.fisma.trinity.adapter.AvailableShortcutAdapter
 import com.fisma.trinity.adapter.ShortcutAdapter
-import com.fisma.trinity.model.ShortcutItem
+import com.fisma.trinity.model.Shortcut
 import com.fisma.trinity.util.ImageUtil
 import com.fisma.trinity.util.LauncherAction
 import com.fisma.trinity.util.Tool
@@ -24,8 +24,8 @@ import com.woxthebox.draglistview.DragListView
 
 class ShortcutSettings : ThemeActivity() {
   var toolbar: Toolbar? = null
-  var mAddedShortcuts: ArrayList<ShortcutItem> = ArrayList()
-  var mAvailableShortcuts: ArrayList<ShortcutItem> = ArrayList()
+  var mAddedShortcuts: ArrayList<Shortcut> = ArrayList()
+  var mAvailableShortcuts: ArrayList<Shortcut> = ArrayList()
 
   val mAddedShortcutsGrid: DragListView
     get() = findViewById(R.id.added_shortcuts)
@@ -42,7 +42,7 @@ class ShortcutSettings : ThemeActivity() {
     setContentView(R.layout.activity_shortcut_settings)
 
     toolbar = findViewById(R.id.toolbar)
-    toolbar!!.title = "Shortcut Settings"
+    toolbar!!.title = getString(R.string.shortcut_preference)
     setSupportActionBar(toolbar)
     mAddedShortcuts = HomeActivity._db.shortcuts
 
@@ -56,6 +56,8 @@ class ShortcutSettings : ThemeActivity() {
       mAvailableShortcuts.add(removed)
       mAvailableShortcutsAdapter!!.notifyDataSetChanged()
       mAddedShortcutsGrid.adapter.notifyDataSetChanged()
+      val db = HomeActivity._db
+      db.deleteShortcut(removed)
     }
     mAddedShortcutsGrid.setAdapter(adapter, false)
     mAddedShortcutsGrid.setDragListListener(object : DragListView.DragListListener {
@@ -64,15 +66,9 @@ class ShortcutSettings : ThemeActivity() {
       }
 
       override fun onItemDragStarted(position: Int) {
-        val item = mAddedShortcuts[position]
-        Log.d(TAG, "start dragging item ${item.label}")
       }
 
       override fun onItemDragEnded(fromPosition: Int, toPosition: Int) {
-        if (fromPosition != toPosition) {
-          val item = mAddedShortcuts[toPosition]
-          Log.d(TAG, "finish dragging item ${item.label}")
-        }
       }
     })
 
@@ -87,12 +83,12 @@ class ShortcutSettings : ThemeActivity() {
     mAvailableShortcuts.removeAt(position)
   }
 
-  fun addAvailableShortcut(shortcut: ShortcutItem) {
+  fun addAvailableShortcut(shortcut: Shortcut) {
     mAvailableShortcuts.add(shortcut)
     updateAvailableShortcuts()
   }
 
-  fun removeAddedShortcut(shortcut: ShortcutItem, position: Int) {
+  fun removeAddedShortcut(shortcut: Shortcut, position: Int) {
     mAddedShortcuts.removeAt(position)
     mAddedShortcutsGrid.adapter.notifyDataSetChanged()
     HomeActivity._db.deleteShortcut(shortcut)
@@ -110,17 +106,17 @@ class ShortcutSettings : ThemeActivity() {
 
   private fun initAvailableShortcuts() {
     mAvailableShortcuts.clear()
-    val shortcuts = HashMap<String, ShortcutItem>()
+    val shortcuts = HashMap<String, Shortcut>()
     for (shortcut in mAddedShortcuts) {
       shortcuts[shortcut.label!!] = shortcut
     }
 
-    var shortcut: ShortcutItem
+    var shortcut: Shortcut
 
     val hasBluetoothFeature = BluetoothAdapter.getDefaultAdapter() != null
     if (!shortcuts.containsKey("Bluetooth") && hasBluetoothFeature) {
-      shortcut = ShortcutItem.Builder()
-        .setType(ShortcutItem.Type.ACTION)
+      shortcut = Shortcut.Builder()
+        .setType(Shortcut.Type.ACTION)
         .setAction(LauncherAction.Action.Bluetooth)
         .setLabel("Bluetooth")
         .build()
@@ -130,8 +126,8 @@ class ShortcutSettings : ThemeActivity() {
 
     val flashlightAvailable = packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)
     if (flashlightAvailable && !shortcuts.containsKey("Flashlight")) {
-      shortcut = ShortcutItem.Builder()
-        .setType(ShortcutItem.Type.ACTION)
+      shortcut = Shortcut.Builder()
+        .setType(Shortcut.Type.ACTION)
         .setAction(LauncherAction.Action.Flashlight)
         .setLabel("Flashlight")
         .build()
@@ -140,8 +136,8 @@ class ShortcutSettings : ThemeActivity() {
     }
 
     if (!shortcuts.containsKey("Wallpaper")) {
-      shortcut = ShortcutItem.Builder()
-        .setType(ShortcutItem.Type.ACTION)
+      shortcut = Shortcut.Builder()
+        .setType(Shortcut.Type.ACTION)
         .setAction(LauncherAction.Action.SetWallpaper)
         .setLabel("Wallpaper")
         .build()
@@ -150,8 +146,8 @@ class ShortcutSettings : ThemeActivity() {
     }
 
     if (!shortcuts.containsKey("Settings")) {
-      shortcut = ShortcutItem.Builder()
-        .setType(ShortcutItem.Type.ACTION)
+      shortcut = Shortcut.Builder()
+        .setType(Shortcut.Type.ACTION)
         .setAction(LauncherAction.Action.LauncherSettings)
         .setLabel("Settings")
         .build()
@@ -160,8 +156,8 @@ class ShortcutSettings : ThemeActivity() {
     }
     if (!shortcuts.containsKey("Messages")) {
       val info = Tool.getDefaultAppInfo(packageManager, Constants.AppCategory.MESSAGING)
-      shortcut = ShortcutItem.Builder()
-        .setType(ShortcutItem.Type.APP)
+      shortcut = Shortcut.Builder()
+        .setType(Shortcut.Type.APP)
         .setPackageName(info!!.activityInfo.packageName)
         .setClassName(info.activityInfo.name)
         .setAction(LauncherAction.Action.LauncherSettings)
@@ -173,8 +169,8 @@ class ShortcutSettings : ThemeActivity() {
 
     if (!shortcuts.containsKey("Phone")) {
       val info = Tool.getDefaultAppInfo(packageManager, Constants.AppCategory.PHONE)
-      shortcut = ShortcutItem.Builder()
-        .setType(ShortcutItem.Type.APP)
+      shortcut = Shortcut.Builder()
+        .setType(Shortcut.Type.APP)
         .setPackageName(info!!.activityInfo.packageName)
         .setClassName(info.activityInfo.name)
         .setAction(LauncherAction.Action.LauncherSettings)
@@ -199,6 +195,8 @@ class ShortcutSettings : ThemeActivity() {
           mAddedShortcuts.add(removed)
           mAvailableShortcutsAdapter!!.notifyDataSetChanged()
           mAddedShortcutsGrid.adapter.notifyDataSetChanged()
+          val db = HomeActivity._db
+          db.saveShortcut(removed)
         }
       }
     }
@@ -206,7 +204,7 @@ class ShortcutSettings : ThemeActivity() {
     mAvailableShortcutsAdapter!!.submitList(mAvailableShortcuts)
   }
 
-  private fun updateIconForTheme(shortcut: ShortcutItem) {
+  private fun updateIconForTheme(shortcut: Shortcut) {
     val attrs = IntArray(1)
     attrs[0] = R.styleable.DashboardView_iconColor
 
@@ -215,22 +213,26 @@ class ShortcutSettings : ThemeActivity() {
     when (shortcut.action) {
       LauncherAction.Action.Bluetooth -> {
         val drawable = VectorDrawableCompat.create(resources, R.drawable.ic_bluetooth, theme)
-        DrawableCompat.setTint(drawable!!, color)
+        shortcut.icon = ImageUtil.drawableToBitmap(drawable!!.mutate())
+        DrawableCompat.setTint(drawable, color)
         shortcut.iconTheme = ImageUtil.drawableToBitmap(drawable)
       }
       LauncherAction.Action.Flashlight -> {
         val drawable = VectorDrawableCompat.create(resources, R.drawable.ic_flashlight, theme)
         DrawableCompat.setTint(drawable!!, color)
+        shortcut.icon = ImageUtil.drawableToBitmap(drawable.mutate())
         shortcut.iconTheme = ImageUtil.drawableToBitmap(drawable)
       }
       LauncherAction.Action.LauncherSettings -> {
         val drawable = VectorDrawableCompat.create(resources, R.drawable.ic_launcher_settings, theme)
         DrawableCompat.setTint(drawable!!, color)
+        shortcut.icon = ImageUtil.drawableToBitmap(drawable.mutate())
         shortcut.iconTheme = ImageUtil.drawableToBitmap(drawable)
       }
       LauncherAction.Action.SetWallpaper -> {
         val drawable = VectorDrawableCompat.create(resources, R.drawable.ic_photo_black_24dp, theme)
         DrawableCompat.setTint(drawable!!, color)
+        shortcut.icon = ImageUtil.drawableToBitmap(drawable.mutate())
         shortcut.iconTheme = ImageUtil.drawableToBitmap(drawable)
       }
     }
