@@ -15,6 +15,12 @@ This is an open source launcher project for Android devices based on OpenLaunche
   * Icon packs
   * Extensible Dashboard View (under development)
 
+### TODO
+
+- [] add nougat layout look and feel
+- [] add support for androidx86 multi window
+- [] removing unnecessary dependencies which can be implemented without it
+
 ### Status
 
 If your instance is crashing frequently please make sure you update to the latest version and reset the app data before creating an issue.
@@ -22,6 +28,7 @@ If your instance is crashing frequently please make sure you update to the lates
 ## Contributions
 
 The project is always open for contributions and accepts pull requests. Please use the _auto reformat feature_ in Android Studio before sending a pull request. Translations can be contributed on GitHub. You can use Stringlate to translate the project directly on your Android phone. It allows you to post the translations on GitHub with little effort.
+
 
 ### License
 
