@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.content.res.Resources
 import android.graphics.drawable.Drawable
 import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
@@ -28,8 +29,17 @@ class App {
 
     if (icon != null) {
       // remove margin from original icon, so that we can set the padding with consistent icon size
-      val bitmap = ImageUtil.removeMargins(ImageUtil.drawableToBitmap(icon)!!, Color.TRANSPARENT)
-      icon = BitmapDrawable(bitmap)
+      var bitmap = ImageUtil.removeMargins(ImageUtil.drawableToBitmap(icon)!!, Color.TRANSPARENT)
+      // normalize icon and make it square for image which doesn't have a square shape
+      if (bitmap.width > bitmap.height) {
+        val paddingY = bitmap.width - bitmap.height
+        bitmap = ImageUtil.addPadding(bitmap, 0f, paddingY.toFloat())
+      } else if (bitmap.height > bitmap.width) {
+        val paddingX = bitmap.height - bitmap.width
+        bitmap = ImageUtil.addPadding(bitmap, paddingX.toFloat(), 0f)
+      }
+
+      icon = BitmapDrawable(Resources.getSystem(), bitmap)
     }
   }
 
