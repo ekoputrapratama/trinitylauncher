@@ -1,87 +1,135 @@
 package com.fisma.trinity.model
 
+import android.content.res.Resources
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import com.fisma.trinity.util.ImageUtil
-import java.util.*
+import java.io.ByteArrayOutputStream
 
 class Plugin {
-  var _packageName: String? = null
-    private set
-  var _className: String? = null
-    private set
-  var _label: String? = null
-    private set
-  var _enabled: Boolean = true
-    private set
-  var _uri: Uri? = null
-  var _id: Int = 0
-  var _icon: Bitmap? = null
+  var packageName: String? = null
+  var className: String? = null
+  var label: String? = null
+  var enabled: Boolean = true
+  var uri: Uri? = null
+  var id: Int = 0
+  var icon: Bitmap? = null
 
-  init {
-    val random = Random()
-    _id = random.nextInt()
-  }
-
-  fun id(id: Int): Plugin {
-    _id = id
+  fun setUri(uri: String): Plugin {
+    this.uri = Uri.parse(uri)
     return this
   }
 
-  fun uri(uri: String): Plugin {
-    _uri = Uri.parse(uri)
+  fun setIcon(icon: Bitmap): Plugin {
+    this.icon = icon
     return this
   }
 
-  fun uri(uri: Uri): Plugin {
-    _uri = uri
+  fun setIcon(icon: Drawable): Plugin {
+    this.icon = ImageUtil.drawableToBitmap(icon)
     return this
   }
 
-  fun icon(icon: Bitmap): Plugin {
-    _icon = icon
-    return this
+  fun getIconBitmap(): Bitmap? {
+    return icon
   }
 
-  fun icon(icon: Drawable): Plugin {
-    _icon = ImageUtil.drawableToBitmap(icon)
-    return this
+  fun getIconDrawable(res: Resources? = null): Drawable {
+    res ?: return BitmapDrawable(Resources.getSystem(), icon)
+    return BitmapDrawable(res, icon)
   }
 
-  fun packageName(text: String?): Plugin {
-    _packageName = text
-    return this
-  }
+  fun getIconBlob(): ByteArray? {
+    icon ?: return null
 
-  fun className(className: String) {
-    _className = className
-  }
-
-  fun label(text: String?): Plugin {
-    _label = text
-    return this
-  }
-
-  fun enabled(enabled: Boolean): Plugin {
-    _enabled = enabled
-    return this
+    val stream = ByteArrayOutputStream()
+    icon!!.compress(Bitmap.CompressFormat.PNG, 0, stream)
+    return stream.toByteArray()
   }
 
   override fun equals(other: Any?): Boolean {
     return other is Plugin && other.hashCode() != hashCode()
   }
 
-  inline fun build(func: Plugin.() -> Unit): Plugin {
-    this.func()
-    return this
-  }
 
   override fun hashCode(): Int {
-    var result = _packageName?.hashCode() ?: 0
-    result = 31 * result + (_label?.hashCode() ?: 0)
-    result = 31 * result + _enabled.hashCode()
-    result = 31 * result + (_uri?.hashCode() ?: 0)
+    var result = packageName?.hashCode() ?: 0
+    result = 31 * result + (label?.hashCode() ?: 0)
+    result = 31 * result + enabled.hashCode()
+    result = 31 * result + (uri?.hashCode() ?: 0)
     return result
+  }
+
+  class Builder {
+    var instance: Plugin? = null
+
+    init {
+      instance = Plugin()
+    }
+
+    fun setPackageName(packageName: String): Builder {
+      instance!!.packageName = packageName
+      return this
+    }
+
+    fun setClassName(className: String): Builder {
+      instance!!.className = className
+      return this
+    }
+
+    fun setIcon(bitmap: Bitmap): Builder {
+      instance!!.icon = bitmap
+      return this
+    }
+
+    fun setIcon(drawable: Drawable): Builder {
+      instance!!.setIcon(drawable)
+      return this
+    }
+
+    fun setIcon(byteArray: ByteArray?): Builder {
+      if (byteArray != null) {
+        instance!!.icon = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+      }
+      return this
+    }
+
+    fun setLabel(label: String?): Builder {
+      instance!!.label = label
+      return this
+    }
+
+    fun setUri(uri: String): Builder {
+      instance!!.uri = Uri.parse(uri)
+      return this
+    }
+
+    fun setUri(uri: Uri): Builder {
+      instance!!.uri = uri
+      return this
+    }
+
+    fun setEnabled(enabled: Boolean): Builder {
+      instance!!.enabled = enabled
+      return this
+    }
+
+    fun setEnabled(enabledInt: Int): Builder {
+      instance!!.enabled = enabledInt == 1
+      return this
+    }
+
+
+    fun setId(id: Int): Builder {
+      instance!!.id = id
+      return this
+    }
+
+    fun build(): Plugin {
+      return instance!!
+    }
   }
 }
