@@ -456,6 +456,10 @@ class DatabaseHelper(protected var _context: Context) : SQLiteOpenHelper(_contex
       .build()
   }
 
+  fun clearTable(tableName: String) {
+    _db.execSQL("DELETE FROM $tableName")
+  }
+
   fun deleteTable(tableName: String) {
     _db.execSQL(SQL_DELETE + tableName)
   }

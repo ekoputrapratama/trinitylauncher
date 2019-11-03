@@ -8,6 +8,7 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import com.fisma.trinity.util.ImageUtil
 import java.io.ByteArrayOutputStream
+import java.util.*
 
 class Plugin {
   var packageName: String? = null
@@ -17,6 +18,11 @@ class Plugin {
   var uri: Uri? = null
   var id: Int = 0
   var icon: Bitmap? = null
+
+  init {
+    val random = Random()
+    id = random.nextInt()
+  }
 
   fun setUri(uri: String): Plugin {
     this.uri = Uri.parse(uri)
