@@ -175,8 +175,10 @@ class AppWidgetResizeFrame(context: Context, val mDragLayer: DragLayer) : FrameL
   fun resizeWidgetIfNeeded() {
     val workspace = HomeActivity.launcher.workspace
     val grid = HomeActivity.mWorkspaceGrid!!
-    val cellHalfHeight = grid.cellHeight / 2
-    val cellHalfWidth = grid.cellWidth / 2
+
+    var cellParams = grid.getCellParams()
+    val cellHalfHeight = cellParams.height / 2
+    val cellHalfWidth = cellParams.width / 2
 
 
     var lp: CellContainer.LayoutParams? = null
@@ -241,7 +243,7 @@ class AppWidgetResizeFrame(context: Context, val mDragLayer: DragLayer) : FrameL
       } else null
     }
 
-    if(mHandleBottomResize) {
+    if (mHandleBottomResize) {
       val bottom = mWidgetContainer!!.y + mWidgetContainer!!.height
       val currentBottom = mCurrentY + mCurrentHeight
 
@@ -275,13 +277,13 @@ class AppWidgetResizeFrame(context: Context, val mDragLayer: DragLayer) : FrameL
 
     if (mCurrentX.toFloat() != x) {
       mCurrentX = x.toInt()
-    } else if(mCurrentY.toFloat() != y) {
+    } else if (mCurrentY.toFloat() != y) {
       mCurrentY = y.toInt()
     }
 
     if (mCurrentWidth != width) {
       mCurrentWidth = width
-    } else if(mCurrentHeight != height) {
+    } else if (mCurrentHeight != height) {
       mCurrentHeight = height
     }
 

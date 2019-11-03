@@ -147,7 +147,7 @@ class AppWidgetPickerPage : ViewPager {
 
 
     val widgetPreviewExists = drawable != null
-    val maxPreviewWidth = mWidgetPickerGrid!!.getParams().width / 2
+    val maxPreviewWidth = mWidgetPickerGrid!!.getGridParams().width / 2
 
     if (widgetPreviewExists) {
       var previewWidth = drawable!!.intrinsicWidth

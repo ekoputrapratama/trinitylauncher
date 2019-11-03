@@ -13,14 +13,13 @@ import com.fisma.trinity.util.runOnAsyncTask
 import com.fisma.trinity.widgets.DashboardView
 
 class PluginManager {
-  var mContext: Context? = null
   var mPackageManager: PackageManager? = null
   var mDashboardView: DashboardView? = null
+  var db: DatabaseHelper? = null
 
   companion object {
     const val TAG = "PluginManager"
     const val SLICE_INTENT_ACTION = "androidx.intent.SLICE_ACTION"
-    @SuppressLint("StaticFieldLeak")
     private var mInstance: PluginManager? = null
     const val PLUGIN_INTENT_CATEGORY = "com.fisma.trinity.PLUGIN"
     var mAvailablePlugins: ArrayList<Plugin> = ArrayList()
@@ -29,9 +28,8 @@ class PluginManager {
       if (mInstance == null) {
         mInstance = PluginManager()
       }
-      mInstance!!.mContext = context
       mInstance!!.mPackageManager = context.packageManager
-      mInstance!!.init()
+      mInstance!!.init(context)
     }
 
     fun initViews(dashboard: DashboardView) {
@@ -94,9 +92,9 @@ class PluginManager {
   }
 
   fun reloadPlugins() {
+    if (db == null || mPackageManager == null) return
     mAvailablePlugins.clear()
-    val db = DatabaseHelper.getInstance(mContext!!)
-    db.clearTable("plugins")
+    db!!.clearTable("plugins")
 
     val intent = Intent(Intent.ACTION_VIEW)
     intent.addCategory(PLUGIN_INTENT_CATEGORY)
@@ -116,7 +114,7 @@ class PluginManager {
             .setLabel(info.loadLabel(mPackageManager)?.toString())
             .setUri(uri)
             .build()
-          db.savePlugin(plugin)
+          db!!.savePlugin(plugin)
           mAvailablePlugins.add(plugin)
         }
       }
@@ -124,10 +122,10 @@ class PluginManager {
     mDashboardView?.setPluginList(mAvailablePlugins)
   }
 
-  fun init() {
+  fun init(context: Context) {
     Log.d(TAG, "init()")
-    val db = DatabaseHelper.getInstance(mContext!!)
-    val plugins = db.plugins
+    db = DatabaseHelper.getInstance(context)
+    val plugins = db!!.plugins
     if (plugins.isEmpty()) {
       reloadPlugins()
     } else {

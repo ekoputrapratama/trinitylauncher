@@ -1,6 +1,5 @@
 package com.fisma.trinity.util
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetProviderInfo
@@ -15,7 +14,6 @@ import android.graphics.Point
 class DynamicGrid {
   companion object {
     const val TAG = "DynamicGrid"
-    @SuppressLint("StaticFieldLeak")
     var mInstances: ArrayList<DynamicGrid> = ArrayList()
     var mScreenWidth: Int = 0
     var mScreenHeight: Int = 0
@@ -40,35 +38,36 @@ class DynamicGrid {
       }
   }
 
-  private var mGridChangeListeners: ArrayList<DynamicGridChangeListener> = ArrayList()
-  private var mContext: Activity? = null
-  var cellWidth: Int = 0
-  var cellHeight: Int = 0
-
   var y: Float = 0f
   var x: Float = 0f
 
   var width: Int = 0
   var height: Int = 0
-  var isOrientationChanged = false
+  private var isOrientationChanged = false
   private var childs: Array<Array<Rect?>?> = arrayOfNulls(0)
   private var _orientation: GridOrientation = GridOrientation.PORTRAIT
-  private var _params: DynamicGridParams
-  private var _cellProfile: CellProfile
+  private var _params: GridParams
+  private var _cellParams: CellParams
   private var mGridName: String
+  private var mGridChangeListeners: ArrayList<DynamicGridChangeListener> = ArrayList()
 
   enum class GridOrientation {
     PORTRAIT,
     LANDSCAPE
   }
 
-  class DynamicGridParams {
+  class GridParams {
     var shouldFillHeight: Boolean = false
     var shouldFillWidth: Boolean = false
     var shouldIgnoreMargin: Boolean = false
-    var rowProfile: GridOrientationSpec? = null
-    var columnProfile: GridOrientationSpec? = null
+    var rowProfile: GridOrientationSpec = GridOrientationSpec(1, 1)
+    var columnProfile: GridOrientationSpec = GridOrientationSpec(1, 1)
     private var grid: DynamicGrid? = null
+
+    companion object {
+      const val MATCH_PARENT = -1
+      const val WRAP_CONTENT = -2
+    }
 
     var margin: Margin = Margin(0, 0, 0, 0)
       set(value) {
@@ -100,7 +99,7 @@ class DynamicGrid {
     var width: Int = 0
       set(value) {
         if (value != field) {
-          if (value == -1) {
+          if (value == MATCH_PARENT) {
             shouldFillWidth = true
           } else {
             field = value
@@ -113,7 +112,7 @@ class DynamicGrid {
     var height: Int = 0
       set(value) {
         if (value != field) {
-          if (value == -1) {
+          if (value == MATCH_PARENT) {
             shouldFillHeight = true
           } else {
             field = value
@@ -126,22 +125,72 @@ class DynamicGrid {
 
     constructor()
 
-    constructor(params: DynamicGridParams) {
-      this.rowProfile = params.rowProfile!!.clone()
-      this.columnProfile = params.columnProfile!!.clone()
+    constructor(width: Int, height: Int, margin: Margin, rowProfile: GridOrientationSpec, colProfile: GridOrientationSpec) {
+      this.rowProfile = rowProfile
+      this.columnProfile = colProfile
+      this.margin = margin
+      this.width = width
+      this.height = height
+    }
+
+    constructor(params: GridParams) {
+      this.rowProfile = params.rowProfile.clone()
+      this.columnProfile = params.columnProfile.clone()
       this.margin = params.margin.clone()
       this.x = params.x
       this.y = params.y
+      this.width = width
+      this.height = height
     }
 
-    fun clone(): DynamicGridParams {
-      return DynamicGridParams(
+    fun clone(): GridParams {
+      return GridParams(
         this
       )
     }
 
+    fun setRowSpec(rowSpec: GridOrientationSpec) {
+      this.rowProfile = rowSpec
+      if (grid != null) {
+        grid!!.calculateGridSize()
+        grid!!.calculateGridItems()
+      }
+    }
+
+    fun setColumnSpec(columnSpec: GridOrientationSpec) {
+      this.columnProfile = columnSpec
+      if (grid != null) {
+        grid!!.calculateGridSize()
+        grid!!.calculateGridItems()
+      }
+    }
+
     fun setGrid(grid: DynamicGrid) {
       this.grid = grid
+    }
+
+    inline fun apply(func: GridParams.() -> Any): GridParams {
+      this.func()
+      return this
+    }
+
+    override fun equals(other: Any?): Boolean {
+      return other is GridParams && other.hashCode() == hashCode()
+    }
+
+    override fun hashCode(): Int {
+      var result = shouldFillHeight.hashCode()
+      result = 31 * result + shouldFillWidth.hashCode()
+      result = 31 * result + shouldIgnoreMargin.hashCode()
+      result = 31 * result + (rowProfile.hashCode())
+      result = 31 * result + (columnProfile.hashCode())
+      result = 31 * result + (grid?.hashCode() ?: 0)
+      result = 31 * result + margin.hashCode()
+      result = 31 * result + x.hashCode()
+      result = 31 * result + y.hashCode()
+      result = 31 * result + width
+      result = 31 * result + height
+      return result
     }
   }
 
@@ -149,11 +198,45 @@ class DynamicGrid {
     fun clone(): GridOrientationSpec {
       return GridOrientationSpec(portrait, landscape)
     }
+
+    override fun equals(other: Any?): Boolean {
+      return other is GridOrientationSpec && other.hashCode() == hashCode()
+    }
+
+    override fun hashCode(): Int {
+      var result = portrait
+      result = 31 * result + landscape
+      return result
+    }
   }
 
-  class CellProfile(val margin: Margin? = Margin(0, 0, 0, 0)) {
-    fun clone(): CellProfile {
-      return CellProfile(margin?.clone())
+  class CellParams {
+    var margin: Margin = Margin(0, 0, 0, 0)
+    var width: Int = 0
+    var height: Int = 0
+
+    constructor()
+    constructor(margin: Margin, width: Int, height: Int) {
+      this.margin = margin
+      this.width = width
+      this.height = height
+    }
+
+    fun clone(): CellParams {
+      return CellParams(margin.clone(), width, height)
+    }
+
+    inline fun apply(func: CellParams.() -> Any): CellParams {
+      this.func()
+      return this
+    }
+
+    override fun equals(other: Any?): Boolean {
+      return other is CellParams && other.hashCode() == hashCode()
+    }
+
+    override fun hashCode(): Int {
+      return margin.hashCode()
     }
   }
 
@@ -162,29 +245,38 @@ class DynamicGrid {
       return Margin(left, right, top, bottom)
     }
 
+    override fun equals(other: Any?): Boolean {
+      return other is Margin && other.hashCode() == hashCode()
+    }
+
     override fun toString(): String {
       return "Margin: right=$right left=$left top=$top bottom=$bottom"
     }
+
+    override fun hashCode(): Int {
+      var result = left
+      result = 31 * result + right
+      result = 31 * result + top
+      result = 31 * result + bottom
+      return result
+    }
   }
 
-  constructor(context: Activity?, params: DynamicGridParams, cellInfo: CellProfile, name: String = "") {
-    mContext = context
+  constructor(name: String = "DynamicGrid") {
     mInstances.add(this)
     mGridName = name
-    if ((mScreenHeight == 0 || mScreenWidth == 0) && mContext != null) {
-      val display = mContext!!.windowManager.defaultDisplay
-      val size = Point()
-      display.getRealSize(size)
-      val width = size.x
-      val height = size.y
-      mScreenWidth = width
-      mScreenHeight = height
-    }
+    _params = GridParams()
+    _params.rowProfile = GridOrientationSpec(1, 1)
+    _params.columnProfile = GridOrientationSpec(1, 1)
+    _cellParams = CellParams()
+  }
 
+  constructor(params: GridParams, cellParams: CellParams, name: String = "DynamicGrid") {
+    mInstances.add(this)
+    mGridName = name
     _params = params
+    _cellParams = cellParams
     _params.setGrid(this)
-    _cellProfile = cellInfo
-
 
     if (!params.shouldIgnoreMargin) {
       x = params.margin.left.toFloat()
@@ -198,6 +290,41 @@ class DynamicGrid {
     calculateGridItems()
   }
 
+  constructor(context: Activity, name: String = "DynamicGrid") : this(context, GridParams(), CellParams(), name)
+
+  constructor(context: Activity, params: GridParams, cellInfo: CellParams, name: String = "DynamicGrid") {
+    mInstances.add(this)
+    mGridName = name
+
+    initScreenSize(context)
+
+    _params = params
+    _params.setGrid(this)
+    _cellParams = cellInfo
+
+    if (!params.shouldIgnoreMargin) {
+      x = params.margin.left.toFloat()
+      y = params.margin.top.toFloat()
+    } else {
+      x = params.x
+      y = params.y
+    }
+
+    calculateGridSize()
+    calculateGridItems()
+  }
+
+  private fun initScreenSize(context: Activity) {
+    if ((mScreenHeight == 0 || mScreenWidth == 0)) {
+      val display = context.windowManager.defaultDisplay
+      val size = Point()
+      display.getRealSize(size)
+      val width = size.x
+      val height = size.y
+      mScreenWidth = width
+      mScreenHeight = height
+    }
+  }
 
   fun setOrientation(orientation: GridOrientation): DynamicGrid {
     if (orientation != _orientation) {
@@ -212,26 +339,26 @@ class DynamicGrid {
     return _orientation
   }
 
-  fun setParams(params: DynamicGridParams): DynamicGrid {
+  fun setGridParams(params: GridParams): DynamicGrid {
     if (_params != params) {
       _params = params
     }
     return this
   }
 
-  fun getParams(): DynamicGridParams {
+  fun getGridParams(): GridParams {
     return _params
   }
 
-  fun setCellProfile(cellProfile: CellProfile): DynamicGrid {
-    if (_cellProfile != cellProfile) {
-      _cellProfile = cellProfile
+  fun setCellProfile(cellParams: CellParams): DynamicGrid {
+    if (_cellParams != cellParams) {
+      _cellParams = cellParams
     }
     return this
   }
 
-  fun getCellProfile(): CellProfile {
-    return _cellProfile
+  fun getCellParams(): CellParams {
+    return _cellParams
   }
 
   fun setMargin(margin: Margin = Margin(0, 0, 0, 0)): DynamicGrid {
@@ -284,14 +411,17 @@ class DynamicGrid {
       height = tmp
     }
 
-    val rowProfile = _params.rowProfile!!
-    val columnProfile = _params.columnProfile!!
+    val rowProfile = _params.rowProfile
+    val columnProfile = _params.columnProfile
 
     val columns = if (_orientation == GridOrientation.PORTRAIT) columnProfile.portrait else columnProfile.landscape
     val rows = if (_orientation == GridOrientation.PORTRAIT) rowProfile.portrait else rowProfile.landscape
 
-    cellWidth = _params.width / columns
-    cellHeight = _params.height / rows
+    val cellWidth = _params.width / columns
+    val cellHeight = _params.height / rows
+
+    _cellParams.width = cellWidth
+    _cellParams.height = cellHeight
 
     if (_orientation == GridOrientation.PORTRAIT) {
       childs = Array(columnProfile.portrait) { arrayOfNulls<Rect>(rowProfile.portrait) }
@@ -336,7 +466,7 @@ class DynamicGrid {
     val columnCount = Settings.appSettings().desktopColumnCount
 
     // get grid item width by dividing workspace width by column count
-    val itemWidth = cellWidth
+    val itemWidth = _cellParams.width
 
     // get the real minWidth, which is different based on user configuration for the desktop
     if (minWidth <= itemWidth) {
@@ -362,7 +492,7 @@ class DynamicGrid {
     val rowCount = Settings.appSettings().desktopRowCount
 
     // get grid item height by dividing workspace height by row count
-    val itemHeight = cellHeight
+    val itemHeight = _cellParams.height
 
     // get the real minHeight, which is different based on user configuration for the desktop
     if (minHeight <= itemHeight) {
@@ -397,10 +527,8 @@ class DynamicGrid {
     val columnCount = Settings.appSettings().desktopColumnCount
     val rowCount = Settings.appSettings().desktopRowCount
 
-    val itemWidth = cellWidth
-    val itemHeight = cellHeight
-    val halfWidth = itemWidth / 2
-    val halfHeight = itemHeight / 2
+    val itemWidth = _cellParams.width
+    val itemHeight = _cellParams.height
 
     val widgetMinHeight = minHeight + padding.top + padding.bottom
     val widgetMinWidth = minWidth + padding.left + padding.right
@@ -442,19 +570,29 @@ class DynamicGrid {
     return mScreenWidth
   }
 
+  fun setScreenHeight(height: Int) {
+    mScreenHeight = height
+  }
+
   fun getScreenHeight(): Int {
     return mScreenHeight
   }
 
-  fun clone(name: String = ""): DynamicGrid {
-    return DynamicGrid(
-      mContext!!, _params.clone(), _cellProfile.clone(), name
-    )
+  fun setScreenWidth(width: Int) {
+    mScreenWidth = width
+  }
+
+  fun setName(name: String) {
+    mGridName = name
+  }
+
+  fun getName(): String {
+    return mGridName
   }
 
   private fun dispatchChanges() {
     for (listener in mGridChangeListeners) {
-      listener.onGridChange(_params.width, _params.height, cellWidth, cellHeight)
+      listener.onGridChange(_params.width, _params.height, _cellParams.width, _cellParams.height)
     }
   }
 
@@ -464,6 +602,21 @@ class DynamicGrid {
 
   fun removeGridChangeListener(listener: DynamicGridChangeListener) {
     mGridChangeListeners.remove(listener)
+  }
+
+  inline fun apply(func: DynamicGrid.() -> Any): DynamicGrid {
+    this.func()
+    return this
+  }
+
+  fun clone(name: String = ""): DynamicGrid {
+    return DynamicGrid(name).apply {
+      setGridParams(_params.clone())
+      setCellProfile(_cellParams.clone())
+      setName(name)
+      setScreenWidth(mScreenWidth)
+      setScreenHeight(mScreenHeight)
+    }
   }
 
   interface DynamicGridChangeListener {
