@@ -13,6 +13,7 @@ import com.fisma.trinity.TrinityPluginProvider
 import com.fisma.trinity.api.*
 import com.fisma.trinity.interfaces.SliceBuilder
 import com.fisma.trinity.manager.Settings
+import com.fisma.trinity.receivers.NetworkStateReceiver
 import com.fisma.trinity.receivers.SliceActionsBroadcastReceiver
 import com.fisma.trinity.util.runOnMainThread
 import java.text.DateFormat
@@ -28,41 +29,39 @@ class WeatherSliceBuilder(
 
   var weatherProvider: WeatherServiceProvider = WeatherServiceProvider.getInstance(context, Settings.appSettings().weatherProvider)
   var mHandler: Handler = Handler(Looper.getMainLooper())
-  var currentWeatherRow: GridRowBuilder
   val weatherUri: String = context.resources.getString(R.string.weather_slice_uri)
 
 
   init {
-    currentWeatherRow = GridRowBuilder()
     fetchForecasts()
     fetchCurrentWeather()
   }
 
-  fun fetchCurrentWeather() {
+  private fun fetchCurrentWeather() {
     runOnMainThread {
       val lastFetch = Settings.appSettings().weatherLastFetch
       val currentTime = System.currentTimeMillis()
       val updateInterval = Settings.appSettings().weatherUpdateInterval
 
-      if (lastFetch == 0.toLong() || currentTime - lastFetch > updateInterval || firstWeatherFetch) {
-        Settings.appSettings().weatherLastFetch = currentTime
+      if (NetworkStateReceiver.isConnected()) {
+        if (lastFetch == 0.toLong() || currentTime - lastFetch > updateInterval || firstWeatherFetch) {
+          Settings.appSettings().weatherLastFetch = currentTime
 
-        val cityName = Settings.appSettings().weatherCityName
-        weatherProvider.getCurrentWeather(cityName) { weather, t ->
-          if (t != null) {
-            Log.e(TAG, t.message)
-
-          } else {
-            currentWeather = weather
-            Log.d(TAG, " request updating slice ${(currentWeather != null)}")
-            context.contentResolver.notifyChange(Uri.parse(weatherUri), null)
+          val cityName = Settings.appSettings().weatherCityName
+          weatherProvider.getCurrentWeather(cityName) { weather, t ->
+            if (t != null) {
+              Log.e(TAG, t.message)
+            } else {
+              currentWeather = weather
+              context.contentResolver.notifyChange(Uri.parse(weatherUri), null)
+            }
           }
-        }
 
-        firstWeatherFetch = false
-        mHandler.postDelayed({
-          fetchCurrentWeather()
-        }, updateInterval)
+          firstWeatherFetch = false
+          mHandler.postDelayed({
+            fetchCurrentWeather()
+          }, updateInterval)
+        }
       }
     }
   }
@@ -73,26 +72,28 @@ class WeatherSliceBuilder(
       val currentTime = System.currentTimeMillis()
       val updateInterval = 10800000.toLong() // 3 hours
 
-      if (lastFetch == 0.toLong() || currentTime - lastFetch > updateInterval || firstForecastFetch) {
-        Settings.appSettings().weatherForecastLastFetch = currentTime
-        weatherProvider.getTodayForecasts(Settings.appSettings().weatherCityName) { forecasts, throwable ->
-          // TODO: handle when quota exceed limit in AccuWeather provider to show a message
-          // and let user use their own api key
-          if (throwable == null && !forecasts.isNullOrEmpty()) {
-            currentWeathers = forecasts
-            val weatherUri = context.resources.getString(R.string.weather_slice_uri)
-            context.contentResolver.notifyChange(Uri.parse(weatherUri), null)
-          } else {
+      if (NetworkStateReceiver.isConnected()) {
+        if (lastFetch == 0.toLong() || currentTime - lastFetch > updateInterval || firstForecastFetch) {
+          Settings.appSettings().weatherForecastLastFetch = currentTime
+          weatherProvider.getTodayForecasts(Settings.appSettings().weatherCityName) { forecasts, throwable ->
+            // TODO: handle when quota exceed limit in AccuWeather provider to show a message
+            // and let user use their own api key
+            if (throwable == null && !forecasts.isNullOrEmpty()) {
+              currentWeathers = forecasts
+              val weatherUri = context.resources.getString(R.string.weather_slice_uri)
+              context.contentResolver.notifyChange(Uri.parse(weatherUri), null)
+            } else {
 
+            }
           }
+
+          mHandler.postDelayed({
+            fetchForecasts()
+          }, updateInterval)
+
+          if (firstForecastFetch)
+            firstForecastFetch = false
         }
-
-        mHandler.postDelayed({
-          fetchForecasts()
-        }, updateInterval)
-
-        if (firstForecastFetch)
-          firstForecastFetch = false
       }
     }
   }
@@ -136,7 +137,7 @@ class WeatherSliceBuilder(
         }
       }
 
-      if (currentWeathers != null && currentWeathers!!.isNotEmpty()) {
+      if (!currentWeathers!!.isNullOrEmpty()) {
         gridRow {
           for (forecast in currentWeathers!!) {
             cell {
@@ -153,7 +154,6 @@ class WeatherSliceBuilder(
           }
         }
       }
-
     }
   }
 

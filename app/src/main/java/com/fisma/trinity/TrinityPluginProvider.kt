@@ -27,6 +27,7 @@ class TrinityPluginProvider : SliceProvider() {
   private lateinit var weatherPath: String
   private lateinit var shortcutsData: ArrayList<Shortcut>
   private lateinit var db: DatabaseHelper
+  private lateinit var contentNotifiers: LazyFunctionMap<Uri, Unit>
 
   init {
     mInstance = this
@@ -36,6 +37,10 @@ class TrinityPluginProvider : SliceProvider() {
     Log.d(TAG, "onCreateSliceProvider()")
 
     val contextNonNull = context ?: return false
+
+    contentNotifiers = LazyFunctionMap {
+      contextNonNull.contentResolver.notifyChange(it, null)
+    }
 
     db = DatabaseHelper.getInstance(contextNonNull)
     shortcutsData = db.shortcuts
