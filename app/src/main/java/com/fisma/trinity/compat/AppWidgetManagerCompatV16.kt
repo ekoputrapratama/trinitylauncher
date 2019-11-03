@@ -13,8 +13,7 @@ import android.os.Bundle
 import android.os.Process.myUserHandle
 import com.fisma.trinity.util.Tool
 
-internal class AppWidgetManagerCompatV16(context: Context) : AppWidgetManagerCompat(context) {
-
+internal class AppWidgetManagerCompatV16(val mContext: Context) : AppWidgetManagerCompat(mContext) {
 
   override val allProviders: List<AppWidgetProviderInfo>
     get() = mAppWidgetManager.installedProviders
@@ -34,9 +33,11 @@ internal class AppWidgetManagerCompatV16(context: Context) : AppWidgetManagerCom
       mAppWidgetManager.bindAppWidgetIdIfAllowed(appWidgetId, info.provider, options)
     }
   }
+
   override fun updateAppWidgetOptions(appWidgetId: Int, options: Bundle?) {
     mAppWidgetManager.updateAppWidgetOptions(appWidgetId, options)
   }
+
   override fun startConfigActivity(
     info: AppWidgetProviderInfo,
     widgetId: Int,

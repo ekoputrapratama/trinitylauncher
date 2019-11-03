@@ -10,15 +10,11 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 
-abstract class AppWidgetManagerCompat internal constructor(internal val mContext: Context) {
+abstract class AppWidgetManagerCompat internal constructor(mContext: Context) {
 
-  internal val mAppWidgetManager: AppWidgetManager
+  internal val mAppWidgetManager: AppWidgetManager = AppWidgetManager.getInstance(mContext)
 
   abstract val allProviders: List<AppWidgetProviderInfo>
-
-  init {
-    mAppWidgetManager = AppWidgetManager.getInstance(mContext)
-  }
 
   fun getAppWidgetInfo(appWidgetId: Int): AppWidgetProviderInfo {
     return mAppWidgetManager.getAppWidgetInfo(appWidgetId)
@@ -39,6 +35,7 @@ abstract class AppWidgetManagerCompat internal constructor(internal val mContext
     host: AppWidgetHost,
     requestCode: Int
   )
+
   abstract fun updateAppWidgetOptions(appWidgetId: Int, options: Bundle?)
   abstract fun loadPreview(info: AppWidgetProviderInfo): Drawable
 
