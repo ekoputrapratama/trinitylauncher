@@ -201,7 +201,6 @@ class ImageUtil {
           var wP = 0
           while (wP < bmpInt.size && !found) {
             if (bmpInt[wP][hP] != color) {
-              Log.e("MTop 2", "Pixel found @" + hP)
               MTop = hP
               found = true
               break
@@ -220,7 +219,6 @@ class ImageUtil {
           var wP = 0
           while (wP < bmpInt.size && !found) {
             if (bmpInt[wP][hP] != color) {
-              Log.e("MBot 2", "Pixel found @" + hP)
               MBot = bmp.height - hP
               found = true
               break
@@ -239,7 +237,6 @@ class ImageUtil {
           var hP = 0
           while (hP < bmpInt[0].size && !found) {
             if (bmpInt[wP][hP] != color) {
-              Log.e("MLeft 2", "Pixel found @" + wP)
               MLeft = wP
               found = true
               break
@@ -257,7 +254,6 @@ class ImageUtil {
         var hP = 0
         while (hP < bmpInt[0].size && !found) {
           if (bmpInt[wP][hP] != color) {
-            Log.e("MRight 2", "Pixel found @$wP")
             MRight = bmp.width - wP
             found = true
             break
