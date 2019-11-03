@@ -68,7 +68,7 @@ class OpenWeatherMapServiceProvider(val context: Context) : WeatherServiceProvid
                 minTemperature(currentWeather.main!!.temp_min.toInt())
                 maxTemperature(currentWeather.main!!.temp_max.toInt())
                 condition(currentWeather.weather!![0].description!!)
-                if (res.isSuccessful && res?.body() != null) {
+                if (res.isSuccessful && res.body() != null) {
                   val bmp = BitmapFactory.decodeStream(res.body()!!.byteStream())
                   icon(bmp)
                 }
@@ -92,67 +92,73 @@ class OpenWeatherMapServiceProvider(val context: Context) : WeatherServiceProvid
       isInRequest = true
       // need to run this on async task
       runOnAsyncTask {
-        // we need to use city id for better accuracy
-        var call: Call<OpenWeatherMapForecastsResponse>
-        // first try to get city id by name
-        val cityCall = mService.getCityByName(city)
-        val cityResponse = cityCall.execute()
+        try {
 
-        call = if (cityResponse.isSuccessful && cityResponse.body() != null) {
-          val list = cityResponse.body()!!.list
-          if (list != null && list.isNotEmpty()) {
-            // city found, get the id and request to get 5 day forecast by city id
-            val cityId = list[0].id
-            mService.get5DayForecastsById(cityId)
-          } else { // city cannot be found fallback to get weather by city name
+
+          // we need to use city id for better accuracy
+          var call: Call<OpenWeatherMapForecastsResponse>
+          // first try to get city id by name
+          val cityCall = mService.getCityByName(city)
+          val cityResponse = cityCall.execute()
+
+          call = if (cityResponse.isSuccessful && cityResponse.body() != null) {
+            val list = cityResponse.body()!!.list
+            if (list != null && list.isNotEmpty()) {
+              // city found, get the id and request to get 5 day forecast by city id
+              val cityId = list[0].id
+              mService.get5DayForecastsById(cityId)
+            } else { // city cannot be found fallback to get weather by city name
+              mService.get5DayForecastsByName(city)
+            }
+          } else {// request failed fallback to get weather by city name
             mService.get5DayForecastsByName(city)
           }
-        } else {// request failed fallback to get weather by city name
-          mService.get5DayForecastsByName(city)
-        }
 
-        val forecastResponse = call.execute()
+          val forecastResponse = call.execute()
 
-        if (forecastResponse.isSuccessful) {
-          val res = forecastResponse.body()
-          if (res?.list != null && res.list!!.isNotEmpty()) {
-            val forecasts = res.list!!
-            val results: ArrayList<Weather> = ArrayList()
-            val days: ArrayList<String> = ArrayList()
-            // OpenWheaterMap gave us per 3 hours data, but we just need 1 data per day
-            for (forecast in forecasts) {
-              val sdf = SimpleDateFormat("EEE")
-              var key = sdf.format(Date(forecast.date * 1000))
-              var forecastDate = forecast.date * 1000
+          if (forecastResponse.isSuccessful) {
+            val res = forecastResponse.body()
+            if (res?.list != null && res.list!!.isNotEmpty()) {
+              val forecasts = res.list!!
+              val results: ArrayList<Weather> = ArrayList()
+              val days: ArrayList<String> = ArrayList()
+              // OpenWheaterMap gave us per 3 hours data, but we just need 1 data per day
+              for (forecast in forecasts) {
+                val sdf = SimpleDateFormat("EEE")
+                var key = sdf.format(Date(forecast.date * 1000))
+                var forecastDate = forecast.date * 1000
 
-              if (DateUtils.isToday(forecastDate) && results.size <= 5) {
+                if (DateUtils.isToday(forecastDate) && results.size <= 5) {
 //                days.add(key)
-                // get the icon using OkHttp
-                val client = OkHttpClient()
-                val request = Request.Builder()
-                  .url("http://openweathermap.org/img/w/" + forecast.weather!![0].icon + ".png")
-                  .build()
-                val res = client.newCall(request).execute()
+                  // get the icon using OkHttp
+                  val client = OkHttpClient()
+                  val request = Request.Builder()
+                    .url("http://openweathermap.org/img/w/" + forecast.weather!![0].icon + ".png")
+                    .build()
+                  val res = client.newCall(request).execute()
 
-                results.add(Weather().build {
-                  date(forecast.date * 1000)
-                  temperature(forecast.main!!.temp.toInt())
-                  minTemperature(forecast.main!!.temp_min.toInt())
-                  maxTemperature(forecast.main!!.temp_max.toInt())
-                  if (res.isSuccessful && res?.body() != null) {
-                    val bmp = BitmapFactory.decodeStream(res.body()?.byteStream())
-                    icon(bmp)
-                  }
-                })
+                  results.add(Weather().build {
+                    date(forecast.date * 1000)
+                    temperature(forecast.main!!.temp.toInt())
+                    minTemperature(forecast.main!!.temp_min.toInt())
+                    maxTemperature(forecast.main!!.temp_max.toInt())
+                    if (res.isSuccessful && res.body() != null) {
+                      val bmp = BitmapFactory.decodeStream(res.body()?.byteStream())
+                      icon(bmp)
+                    }
+                  })
+                }
               }
+              isInRequest = false
+              dispatchToCallbacks(results, null)
             }
+          } else {
+            Log.e(WeatherSliceBuilder.TAG, forecastResponse.message())
             isInRequest = false
-            dispatchToCallbacks(results, null)
+            dispatchToCallbacks(null, Throwable(forecastResponse.message()))
           }
-        } else {
-          Log.e(WeatherSliceBuilder.TAG, forecastResponse.message())
-          isInRequest = false
-          dispatchToCallbacks(null, Throwable(forecastResponse.message()))
+        } catch (e: Exception) {
+          dispatchToCallbacks(null, Throwable("cannot fetch forecast"))
         }
       }
     }
