@@ -13,6 +13,8 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.animation.AccelerateDecelerateInterpolator
 import com.fisma.trinity.R
 import com.fisma.trinity.activity.HomeActivity
@@ -119,7 +121,7 @@ class AppWidgetPicker : RevealFrameLayout, WidgetPickerCallback {
       override fun onAnimationEnd(p1: Animator) {
         Log.d("AppWidgetPicker", "widget picker animation ended")
         widgetPickerCallback!!.callback(false, false)
-        visibility = View.GONE
+        visibility = View.INVISIBLE
       }
 
       override fun onAnimationCancel(p1: Animator) {}
@@ -137,19 +139,20 @@ class AppWidgetPicker : RevealFrameLayout, WidgetPickerCallback {
   fun init() {
     if (isInEditMode) return
     val layoutInflater = LayoutInflater.from(context)
-    visibility = View.GONE
+    visibility = View.INVISIBLE
 
-    pickerPage = layoutInflater.inflate(R.layout.view_widget_picker_page, this, false) as AppWidgetPickerPage
+    pickerPage = AppWidgetPickerPage(context)
+    pickerPage!!.layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
     addView(pickerPage, 0)
     pickerPage!!.visibility = View.VISIBLE
   }
 
   fun getDefaultOptionsForWidget(widget: AppWidget): Bundle? {
     var options: Bundle? = null
-    val launcher: HomeActivity = HomeActivity.launcher
+    //val launcher: HomeActivity = HomeActivity.launcher
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      val density = launcher.resources.displayMetrics.density
-      // val xPaddingDips = 
+      //val density = launcher.resources.displayMetrics.density
+      // val xPaddingDips =
 
       options = Bundle()
       options.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, widget.minHeight)

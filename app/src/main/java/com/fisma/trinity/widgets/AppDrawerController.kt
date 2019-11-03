@@ -106,7 +106,7 @@ class AppDrawerController : RevealFrameLayout {
 
       override fun onAnimationEnd(p1: Animator) {
         _appDrawerCallback!!.callback(false, false)
-        visibility = View.GONE
+        visibility = View.INVISIBLE
       }
 
       override fun onAnimationCancel(p1: Animator) {}
@@ -129,16 +129,18 @@ class AppDrawerController : RevealFrameLayout {
     if (isInEditMode) return
     val layoutInflater = LayoutInflater.from(context)
     _drawerMode = Settings.appSettings().drawerStyle
-    visibility = View.GONE
+    visibility = View.INVISIBLE
     setBackgroundColor(Color.parseColor("#CD000000"))
+
     when (_drawerMode) {
       Mode.GRID -> {
         _drawerViewGrid = AppDrawerGrid(context)
-        _drawerViewGrid.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        _drawerViewGrid.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         addView(_drawerViewGrid)
       }
       else -> {
-        _drawerViewPage = layoutInflater.inflate(R.layout.view_app_drawer_page, this, false) as AppDrawerPage
+        _drawerViewPage = AppDrawerPage(context)
+        _drawerViewPage.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         addView(_drawerViewPage)
         val indicator = layoutInflater.inflate(R.layout.view_drawer_indicator, this, false) as PagerIndicator
         addView(indicator)

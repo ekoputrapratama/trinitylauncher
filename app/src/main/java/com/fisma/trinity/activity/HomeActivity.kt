@@ -5,12 +5,12 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityOptions
 import android.app.WallpaperManager
-import android.appwidget.AppWidgetManager
 import android.content.*
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
+import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Build
 import android.os.Build.VERSION
@@ -38,6 +38,7 @@ import com.fisma.trinity.model.App
 import com.fisma.trinity.model.AppWidget
 import com.fisma.trinity.model.Item
 import com.fisma.trinity.receivers.AppUpdateReceiver
+import com.fisma.trinity.receivers.NetworkStateReceiver
 import com.fisma.trinity.receivers.ShortcutReceiver
 import com.fisma.trinity.util.*
 import com.fisma.trinity.viewutil.DialogHelper
@@ -53,7 +54,6 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
     const val TAG = "HomeActivity"
     const val REQUEST_CREATE_APPWIDGET = 0x6475
     const val REQUEST_PERMISSION_STORAGE = 0x3648
-    const val REQUEST_PICK_APPWIDGET = 0x2678
 
     const val REQUEST_BIND_APPWIDGET = 11
     const val REQUEST_RECONFIGURE_APPWIDGET = 12
@@ -78,6 +78,7 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
     private val _appUpdateIntentFilter = IntentFilter()
     private val _shortcutIntentFilter = IntentFilter()
     private val _timeChangedIntentFilter = IntentFilter()
+    private val _networkChangedIntentFilter = IntentFilter()
 
     @SuppressLint("StaticFieldLeak")
     var mWorkspaceGrid: DynamicGrid? = null
@@ -91,12 +92,14 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
       _appUpdateIntentFilter.addAction("android.intent.action.PACKAGE_CHANGED")
       _appUpdateIntentFilter.addDataScheme("package")
       _shortcutIntentFilter.addAction("com.android.launcher.action.INSTALL_SHORTCUT")
+      _networkChangedIntentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION)
     }
   }
 
   private var _appUpdateReceiver: AppUpdateReceiver? = null
   private var _shortcutReceiver: ShortcutReceiver? = null
   private var _timeChangedReceiver: BroadcastReceiver? = null
+  private var _networkChangedReceiver: NetworkStateReceiver? = null
 
   private var cx: Int = 0
   private var cy: Int = 0
@@ -160,6 +163,9 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
   val mDropActionView: View
     get() = contentView.findViewById(R.id.drop_action)
 
+  lateinit var mWallpaperBitmap: Bitmap
+  var mWallpaperBlurredBitmap: Bitmap? = null
+
   @SuppressLint("InflateParams")
   override fun onCreate(savedInstanceState: Bundle?) {
     AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
@@ -177,6 +183,11 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
       setTheme(R.style.Home_Dark)
     }
 
+    askRequiredPermissions()
+    if (hasStoragePermission) {
+      val wallpaperManager = WallpaperManager.getInstance(this)
+      mWallpaperBitmap = ImageUtil.drawableToBitmap(wallpaperManager.drawable.mutate()) as Bitmap
+    }
     setContentView(layoutInflater.inflate(R.layout.activity_home, null))
 
     // transparent status and navigation
@@ -191,6 +202,8 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
   override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     if (requestCode == 0) {
+      val wallpaperManager = WallpaperManager.getInstance(this)
+      mWallpaperBitmap = ImageUtil.drawableToBitmap(wallpaperManager.drawable.mutate()) as Bitmap
       if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
         updateBackground()
       }
@@ -208,27 +221,30 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
     }
   }
 
+
   private fun updateBackground() {
     if (hasStoragePermission) {
-      val wallpaperManager = WallpaperManager.getInstance(this)
-      val drawable = wallpaperManager.drawable.mutate()
 
-      val task = HokoBlur.with(this)
+      HokoBlur.with(this)
         .scheme(HokoBlur.SCHEME_NATIVE)
         .mode(HokoBlur.MODE_STACK)
-        .radius(25)
+        .radius(75)
         .sampleFactor(2f)
         .forceCopy(true)
         .needUpscale(false)
-        .asyncBlur(ImageUtil.drawableToBitmap(drawable), object : AsyncBlurTask.Callback {
+        .asyncBlur(mWallpaperBitmap, object : AsyncBlurTask.Callback {
           override fun onBlurSuccess(bitmap: Bitmap?) {
-            background.background = BitmapDrawable(bitmap)
+            val drawable = BitmapDrawable(resources, bitmap)
+            mWallpaperBlurredBitmap = bitmap
+            background.background = drawable
+            appDrawerController._drawerViewGrid.background = drawable
           }
 
           override fun onBlurFailed(error: Throwable?) {
 
           }
         })
+
 
     } else {
       background.setBackgroundColor(Color.parseColor("#CD000000"))
@@ -246,7 +262,7 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
       Settings.appSettings().setAppShowIntro(false)
 
       initDockItems()
-      askRequiredPermissions()
+
     }
 
     // item drag and drop
@@ -310,16 +326,14 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
     params.width = -1
 
     mWorkspaceGrid = DynamicGrid(this, params, cell, "Workspace")
-    dock.addOnLayoutChangeListener { v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+    dock.addOnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ ->
 
       if (dock.visibility == View.VISIBLE && dock.alpha == 1f && (bottom - top) != dockHeight) {
         dockHeight = bottom - top
-        Log.d(TAG, "dock changed dockHeight=$dockHeight")
         mWorkspaceGrid?.setMargin(DynamicGrid.Margin(0, 0, 0, 40 + dockHeight))
       }
     }
   }
-
 
   private fun initAppManager() {
     Settings.appLoader().addUpdateListener(object : AppUpdateListener {
@@ -360,7 +374,7 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
 
       override fun onPageScrollStateChanged(state: Int) {}
     })
-    HomeAppDrawer(this, desktopIndicator).initAppDrawer(appDrawerController)
+    HomeAppDrawer(this).initAppDrawer(appDrawerController)
     HomeWidgetPicker(this).initWidgetPicker(widgetPicker)
 
     updateBackground()
@@ -386,7 +400,7 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
   private fun initDragNDrop(_homeActivity: HomeActivity, leftDragHandle: View, rightDragHandle: View, dragNDropView: DragLayer) {
     val dragHandler = Handler()
     var shouldHandleLeftDropTarget = true
-    var isRemoveDropAction = false
+//    var isRemoveDropAction = false
 
     dragNDropView.registerDropTarget(object : DropTargetListener {
       override val view: View
@@ -543,9 +557,8 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
       override val view: View
         get() = workspace
 
-      var widgetItem: AppWidget? = null
       override fun onStart(action: DragAction.Action, location: PointF, isInside: Boolean): Boolean {
-        if (DragAction.Action.SEARCH != action && DragAction.Action.DRAWER != action && DragAction.Action.APPWIDGET != action)
+        if (DragAction.Action.SEARCH != action && DragAction.Action.APPWIDGET != action)
           dragLayer.showItemPopup(_homeActivity)
 
         mRightDropTarget.alpha = 0.5f
@@ -726,18 +739,12 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
   private fun registerBroadcastReceiver() {
     _appUpdateReceiver = AppUpdateReceiver()
     _shortcutReceiver = ShortcutReceiver()
-    _timeChangedReceiver = object : BroadcastReceiver() {
-      override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_TIME_TICK) {
-          //          F          updateSearchClock();
-        }
-      }
-    }
+    _networkChangedReceiver = NetworkStateReceiver()
 
     // register all receivers
+    registerReceiver(_networkChangedReceiver, _networkChangedIntentFilter)
     registerReceiver(_appUpdateReceiver, _appUpdateIntentFilter)
     registerReceiver(_shortcutReceiver, _shortcutIntentFilter)
-    registerReceiver(_timeChangedReceiver, _timeChangedIntentFilter)
   }
 
   override fun onRemovePage() {
@@ -853,7 +860,6 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
   }
 
   override fun onPickDesktopAction() {
-//        HpDesktopPickAction(this).onPickDesktopAction()
     Settings.eventHandler().showPickAction(this, (object : DialogListener.OnActionDialogListener {
       override fun onAdd(type: Int) {
         val pos = workspace.currentPage.findFreeSpace()
@@ -869,14 +875,6 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
   override fun onPickWidget(view: View?) {
     ignoreResume = false
     openWidgetPicker(view)
-  }
-
-  fun dimBackground() {
-//        Animation.fadeIn(200, background)
-  }
-
-  fun unDimBackground() {
-//        Animation.fadeOut(200, background)
   }
 
   fun clearRoomForPopUp() {
@@ -913,45 +911,9 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
     }
   }
 
-  fun updateHomeLayout() {
+  private fun updateHomeLayout() {
     updateDock(true)
     updateDesktopIndicator(true)
-  }
-
-  private fun configureWidget(data: Intent) {
-    val extras = data.extras
-    val appWidgetId = extras!!.getInt("appWidgetId", -1)
-    val appWidgetInfo = mAppWidgetManager.getAppWidgetInfo(appWidgetId)
-    if (appWidgetInfo.configure != null) {
-      val intent = Intent("android.appwidget.action.APPWIDGET_CONFIGURE")
-      intent.component = appWidgetInfo.configure
-      intent.putExtra("appWidgetId", appWidgetId)
-      startActivityForResult(intent, REQUEST_CREATE_APPWIDGET)
-    } else {
-      createWidget(data)
-    }
-  }
-
-  private fun createWidget(data: Intent) {
-    val extras = data.extras
-    val appWidgetId = extras!!.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
-    val appWidgetInfo = mAppWidgetManager.getAppWidgetInfo(appWidgetId)
-    val item = Item.newWidgetItem(appWidgetId)
-    val desktop = workspace
-    val pages = desktop.pages
-    item.spanX = (appWidgetInfo.minWidth - 1) / pages[desktop.currentItem].cellWidth + 1
-    item.spanY = (appWidgetInfo.minHeight - 1) / pages[desktop.currentItem].cellHeight + 1
-    val point = desktop.currentPage.findFreeSpace(item.spanX, item.spanY)
-    if (point != null) {
-      item.x = point.x
-      item.y = point.y
-
-      // add item to database
-      _db.saveItem(item, desktop.currentItem, Constants.ItemPosition.Desktop)
-      desktop.addItemToPage(item, desktop.currentItem)
-    } else {
-      Tool.toast(this, R.string.toast_not_enough_space)
-    }
   }
 
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -1018,27 +980,21 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
       groupPopup.collapse()
       // close app option menu
       dragLayer.collapse()
-      if (workspace.inEditMode) {
-        // exit workspace edit mode
-        Log.d("handleLauncherResume", "exit workspace edit mode")
-        workspace.currentPage.performClick()
-      } else if (appDrawerController.visibility == View.VISIBLE) {
-        Log.d("handleLauncherResume", "closeAppDrawer()")
-        closeAppDrawer()
-      } else if (findViewById<ContentView>(R.id.content_view).currentItem == 0) {
-        findViewById<ContentView>(R.id.content_view).currentItem = 1
-      } else if (widgetPicker.visibility == View.VISIBLE) {
-        Log.d("handleLauncherResume", "closeWidgetPicker()")
-        closeWidgetPicker()
-      } else if (workspace.currentItem != 0) {
-        Log.d("handleLauncherResume", "go to default page")
-        val appSettings = Settings.appSettings()
-        workspace.currentItem = appSettings.desktopPageCurrent
+      when {
+        workspace.inEditMode -> // exit workspace edit mode
+          workspace.currentPage.performClick()
+        appDrawerController.visibility == View.VISIBLE -> closeAppDrawer()
+        findViewById<ContentView>(R.id.content_view).currentItem == 0 -> findViewById<ContentView>(R.id.content_view).currentItem = 1
+        widgetPicker.visibility == View.VISIBLE -> closeWidgetPicker()
+        workspace.currentItem != 0 -> {
+          val appSettings = Settings.appSettings()
+          workspace.currentItem = appSettings.desktopPageCurrent
+        }
       }
     }
   }
 
-  fun openWidgetPicker(view: View? = null) {
+  private fun openWidgetPicker(view: View? = null) {
     val pos = IntArray(2)
     view!!.getLocationInWindow(pos)
     cx = pos[0]
@@ -1056,7 +1012,6 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
     widgetPicker.close(cx, cy)
   }
 
-  @JvmOverloads
   fun openAppDrawer(view: View? = null, x: Int = 0, y: Int = 0) {
     if (!(x > 0 && y > 0) && view != null) {
       val pos = IntArray(2)
@@ -1084,22 +1039,24 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
     appDrawerController.close(cx, cy)
   }
 
-  inner class HomeWidgetPicker(val homeActivity: HomeActivity) : Callback.a2<Boolean, Boolean> {
+  inner class HomeWidgetPicker(private val homeActivity: HomeActivity) : Callback.a2<Boolean, Boolean> {
     override fun callback(shouldOpenPicker: Boolean, shouldStartAnimation: Boolean) {
       if (shouldOpenPicker) {
         if (shouldStartAnimation) {
-          homeActivity.widgetPicker.postDelayed(Runnable {
-            //                        Animation.fadeIn(200, appDrawerIndicator)
-//                        Animation.fadeOut(200, homeActivity.workspace)
-//                        homeActivity.updateDesktopIndicator(false)
-//                        homeActivity.updateDock(false)
-            //                        _homeActivity.updateSearchBar(false);
+          widgetPicker.postDelayed({
+            Animation.fadeOut(200, homeActivity.workspace)
+            homeActivity.updateDesktopIndicator(false)
+            homeActivity.updateDock(false)
           }, 100)
         }
       } else {
         if (!shouldStartAnimation) {
           // the end of app widget picker animation
           homeActivity.widgetPicker.reset()
+        } else {
+          Animation.fadeIn(200, homeActivity.workspace)
+          homeActivity.updateDesktopIndicator(true)
+          homeActivity.updateDock(true)
         }
       }
     }
@@ -1109,7 +1066,7 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
     }
   }
 
-  inner class HomeAppDrawer(val homeActivity: HomeActivity, val appDrawerIndicator: PagerIndicator) : Callback.a2<Boolean, Boolean> {
+  inner class HomeAppDrawer(private val homeActivity: HomeActivity) : Callback.a2<Boolean, Boolean> {
 
     fun initAppDrawer(appDrawerController: AppDrawerController) {
       appDrawerController.setCallBack(this)
@@ -1118,8 +1075,7 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
     override fun callback(shouldOpenDrawer: Boolean, shouldStartAnimation: Boolean) {
       if (shouldOpenDrawer) {
         if (shouldStartAnimation) {
-          homeActivity.appDrawerController.postDelayed(Runnable {
-            Animation.fadeIn(200, appDrawerIndicator)
+          appDrawerController.postDelayed({
             Animation.fadeOut(200, homeActivity.workspace)
             homeActivity.updateDesktopIndicator(false)
             homeActivity.updateDock(false)
@@ -1127,7 +1083,6 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
         }
       } else {
         if (shouldStartAnimation) {
-          Animation.fadeOut(200, appDrawerIndicator)
           Animation.fadeIn(200, homeActivity.workspace)
           homeActivity.updateDesktopIndicator(true)
           homeActivity.updateDock(true)
@@ -1154,7 +1109,7 @@ class HomeActivity : AppCompatActivity(), Workspace.OnDesktopEditListener, Works
         WorkspaceGestureListener.Type.Pinch -> gesture = _appSettings.gesturePinch
         WorkspaceGestureListener.Type.Unpinch -> gesture = _appSettings.gestureUnpinch
         WorkspaceGestureListener.Type.DoubleTap -> gesture = _appSettings.gestureDoubleTap
-        else -> Log.e(javaClass.toString(), "gesture error")
+//        else -> Log.e(javaClass.toString(), "gesture error")
       }
       if (gesture != null) {
         if (_appSettings.gestureFeedback) {
