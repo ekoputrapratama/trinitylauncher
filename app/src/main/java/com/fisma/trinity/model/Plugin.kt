@@ -57,7 +57,7 @@ class Plugin {
   }
 
   override fun equals(other: Any?): Boolean {
-    return other is Plugin && other.hashCode() != hashCode()
+    return other is Plugin && other.hashCode() == hashCode()
   }
 
 
